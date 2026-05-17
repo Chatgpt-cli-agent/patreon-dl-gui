@@ -94,6 +94,7 @@ function OutputBox() {
                 { value: "{media.id}", label: "media id" },
                 { value: "{media.filename}", label: "default filename" },
                 { value: "{media.type}", label: "type" },
+                { value: "{media.index}", label: "index" },
                 { value: "{media.variant}", label: "variant" },
                 { value: "{src.type}", label: "source type" },
                 { value: "{src.id}", label: "source id" },

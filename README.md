@@ -125,6 +125,7 @@ The following table lists the version of `patreon-dl` used by each version of `p
 | v2.7.1 - v2.7.2          | v3.6.1                    |
 | v2.8.0                   | v3.7.1                    |
 | v2.9.0                   | v3.8.1                    |
+| v2.10.0                  | v3.9.0                    |
 
 ## Running / packaging the app from source
 
@@ -149,6 +150,11 @@ $ npm run make
 ```
 
 ## Changelog
+
+v2.10.0
+- Update `patreon-dl` library to v3.9.0 ([changelog](https://github.com/patrickkfkan/patreon-dl/blob/f35991806e4c14a449b8822e1286282c00c9a91a/CHANGELOG.md)).
+- Add support for `media.index` in media filename format ([#60](https://github.com/patrickkfkan/patreon-dl-gui/issues/60)).
+- Add support for custom embed downloaders.
 
 v2.9.0
 - Update `patreon-dl` library to v3.8.1 ([changelog](https://github.com/patrickkfkan/patreon-dl?tab=readme-ov-file#changelog)).

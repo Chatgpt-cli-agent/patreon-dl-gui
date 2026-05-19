@@ -1,5 +1,4 @@
 import type {
-  UIConfig,
   UIConfigSectionPropTuple,
   UIConfigSectionWithPropsOf
 } from "../../../types/UIConfig";
@@ -10,10 +9,13 @@ import { Button, Col, Form, InputGroup, Row } from "react-bootstrap";
 import classNames from "classnames";
 import type { AccessibilityProps, HelpProps } from "../../../../common/ui";
 import { createHelpIcon } from "./Common";
+import _ from "lodash";
 
-type InputValueType = "text" | "number" | "dir" | "file";
+type InputValueType = "text" | "number" | "dir" | "file" | "any";
 type ConfigValueType<T extends InputValueType> =
-  T extends "number" ? number : string;
+  T extends "number" ? number
+  : T extends "any" ? any
+  : string;
 
 type TextInputRowProps<
   S extends UIConfigSectionWithPropsOf<ConfigValueType<T>>,
@@ -25,12 +27,21 @@ type TextInputRowProps<
   label: string;
   insertables?: { value: string; label: string }[];
   onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
-} & HelpProps &
+} & (T extends "any" ?
+  {
+    getDisplayValue: (configValue: ConfigValueType<T>) => string;
+    updateConfigValue: (
+      currentConfigValue: ConfigValueType<T>,
+      inputValue: string
+    ) => ConfigValueType<T>;
+  }
+: {}) &
+  HelpProps &
   AccessibilityProps;
 
 function TextInputRow<
   S extends UIConfigSectionWithPropsOf<ConfigValueType<T>>,
-  T extends InputValueType
+  T extends InputValueType = "text"
 >(props: TextInputRowProps<S, T>) {
   const { config, setConfigValue } = useConfig();
   const {
@@ -43,19 +54,34 @@ function TextInputRow<
     onChange
   } = props;
   const [section, prop] = target;
-  const value = config[section][prop] as string | number;
+  const value =
+    type === "any" ?
+      (props as TextInputRowProps<S, "any">).getDisplayValue(
+        config[section][prop]
+      )
+    : (config[section][prop] as string | number);
   const textboxRef = useRef<HTMLInputElement | null>(null);
 
   const _setConfigValue = useCallback(
     (inputValue: string) => {
-      const configValue = type === "number" ? Number(inputValue) : inputValue;
-      setConfigValue(
-        section,
-        prop,
-        configValue as UIConfig[typeof section][typeof prop]
-      );
+      let newConfigValue: ConfigValueType<T>;
+      if (type === "any") {
+        newConfigValue = (
+          props as TextInputRowProps<S, "any">
+        ).updateConfigValue(_.cloneDeep(config[section][prop]), inputValue);
+      } else {
+        newConfigValue = (
+          type === "number" ?
+            Number(inputValue)
+          : inputValue) as ConfigValueType<T>;
+      }
+      setConfigValue(section, prop, newConfigValue);
     },
-    [setConfigValue]
+    [
+      config,
+      (props as TextInputRowProps<S, "any">).updateConfigValue,
+      setConfigValue
+    ]
   );
 
   const handleValueChange = useCallback(
@@ -97,6 +123,7 @@ function TextInputRow<
   switch (type) {
     case "text":
     case "number":
+    case "any":
       textboxContainer = textbox;
       break;
     case "dir":

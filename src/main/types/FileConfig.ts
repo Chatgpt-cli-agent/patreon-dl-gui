@@ -7,7 +7,7 @@ export type FileConfigContents = {
   [S in FileConfigSection]: {
     [P in FileConfigProp<S>]: string;
   };
-};
+} & Record<`embed.downloader.${string}`, { exec: string }>;
 
 export interface FileConfig<T extends "hasPath" | "" = ""> {
   editorId: number;

@@ -9,6 +9,7 @@ import _ from "lodash";
 import CheckboxRow from "./components/CheckboxRow";
 import { useCommands } from "../contexts/CommandsProvider";
 import { useEditor } from "../contexts/EditorContextProvider";
+import EmbedDownloaderList from "./EmbedDownloaderList";
 
 interface EmbedsBoxState {
   embedDownloaderYouTube: UIConfig["embed.downloader.youtube"];
@@ -250,6 +251,9 @@ function EmbedsBox() {
               />
             : null}
           </Container>
+        </Tab>
+        <Tab className="pb-2" eventKey="embed-downloader-others" title="Others">
+          <EmbedDownloaderList />
         </Tab>
       </Tabs>
     );

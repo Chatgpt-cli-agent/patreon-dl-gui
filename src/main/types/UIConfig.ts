@@ -44,6 +44,11 @@ export type CustomSelectionValue<
   custom: V[];
 };
 
+export interface CustomEmbedDownloader {
+  provider: string;
+  exec: string;
+}
+
 export type MaxVideoResolution =
   | "none"
   | "360p"
@@ -135,6 +140,9 @@ export interface UIConfig {
     "helper.ytdlp.path": string;
     "helper.password": string;
     "helper.ytdlp.args": string;
+  };
+  "embed.downloader.others": {
+    entries: CustomEmbedDownloader[];
   };
   "logger.console": {
     enabled: boolean;

@@ -175,6 +175,9 @@ function convertPatreonDLOptionsToUIConfig(
       "helper.password": "",
       "helper.ytdlp.args": ""
     },
+    "embed.downloader.others": {
+      entries: []
+    },
     "logger.console": {
       enabled: consoleLoggerOptions.enabled,
       "log.level": consoleLoggerOptions.logLevel,
@@ -228,6 +231,8 @@ function convertPatreonDLOptionsToUIConfig(
       case "sproutvideo":
         conf["embed.downloader.sproutvideo"]["exec"] = exec;
         break;
+      default:
+        conf["embed.downloader.others"].entries.push({ provider, exec });
     }
   }
   return conf;

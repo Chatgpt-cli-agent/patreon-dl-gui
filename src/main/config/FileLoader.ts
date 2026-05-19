@@ -334,28 +334,27 @@ export function loadUIConfigFromFile(filePath: string): LoadFileResult {
 
   const defaultConfig = getStartupUIConfig();
   for (const section of parser.sections()) {
-    if (!isFileConfigSection(section)) {
+    const fcs = isFileConfigSection(section);
+    if (!fcs && !isEmbedDownloaderSection(section)) {
       allMessages.push({
         type: "warn",
         text: `[${section}]: Skipped - not supported`
       });
       continue;
     }
-    for (const prop of Object.keys(parser.items(section))) {
-      if (!isFileConfigProp(section, prop)) {
-        allMessages.push({
-          type: "warn",
-          text: `[${section}]->${prop}: Skipped - not supported`
-        });
+    if (fcs) {
+      for (const prop of Object.keys(parser.items(section))) {
+        if (!isFileConfigProp(section, prop)) {
+          allMessages.push({
+            type: "warn",
+            text: `[${section}]->${prop}: Skipped - not supported`
+          });
+        }
       }
     }
   }
 
-  const __getFileConfigValue = <S extends FileConfigSection>(
-    section: S,
-    prop: FileConfigProp<S>
-  ) => {
-    const v = parser.get(section, prop);
+  const __stripQuotes = (v: string | undefined) => {
     if (!v) {
       return v;
     }
@@ -364,6 +363,14 @@ export function loadUIConfigFromFile(filePath: string): LoadFileResult {
       r = r.substring(1, r.length - 1);
     }
     return r.trim();
+  }
+
+  const __getFileConfigValue = <S extends FileConfigSection>(
+    section: S,
+    prop: FileConfigProp<S>
+  ) => {
+    const v = parser.get(section, prop);
+    return __stripQuotes(v);
   };
 
   const __fromFileConfigValue = <S extends FileConfigSection, V>(
@@ -881,6 +888,9 @@ export function loadUIConfigFromFile(filePath: string): LoadFileResult {
         toString
       )
     },
+    "embed.downloader.others": {
+      entries: []
+    },
     "logger.console": {
       enabled: __fromFileConfigValue(
         "logger.console",
@@ -1028,6 +1038,17 @@ export function loadUIConfigFromFile(filePath: string): LoadFileResult {
   config["support.data"].appliedProxySettings.rejectUnauthorizedTLS =
     config.request["proxy.reject.unauthorized.tls"];
 
+  const embedDownloaderPrefix = "embed.downloader.";
+  const handledEmbedDownloaders = ["youtube", "vimeo", "sproutvideo"];
+  config["embed.downloader.others"].entries = parser.sections()
+    .filter((s) => s.startsWith(embedDownloaderPrefix))
+    .map((s) => s.substring(embedDownloaderPrefix.length))
+    .filter((s) => s && !handledEmbedDownloaders.includes(s))
+    .map((provider) => {
+      const exec = __stripQuotes(parser.get(`${embedDownloaderPrefix}${provider}`, "exec")) ?? '';
+      return { provider, exec };
+    });
+
   return {
     config,
     alerts: allMessages
@@ -1038,6 +1059,10 @@ function isFileConfigSection(
   sectionName: string
 ): sectionName is FileConfigSection {
   return Object.keys(FILE_CONFIG_SECTION_PROPS).includes(sectionName);
+}
+
+function isEmbedDownloaderSection(sectionName: string): sectionName is `embed.downloader.${string}` {
+  return sectionName.startsWith("embed.downloader.");
 }
 
 function isFileConfigProp(section: FileConfigSection, propName: string) {

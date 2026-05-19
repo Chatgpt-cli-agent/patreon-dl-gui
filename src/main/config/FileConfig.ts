@@ -208,6 +208,14 @@ export function convertUIConfigToFileContents(
     }
   };
 
+  config["embed.downloader.others"].entries.forEach((dl) => {
+    const provider = dl.provider.trim();
+    const exec = dl.exec.trim();
+    if (provider) {
+      contents[`embed.downloader.${provider}`] = { exec };
+    }
+  });
+
   return contents;
 }
 

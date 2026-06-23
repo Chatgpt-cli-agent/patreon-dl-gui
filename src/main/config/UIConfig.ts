@@ -10,11 +10,9 @@ import {
   getDefaultFileLoggerOptions,
   normalizeMaxVideoResolution
 } from "../util/Config";
-import os from "os";
-import path from "path";
-
-// Override patreon-dl default output path to user's home directory
-const defaultOutputPath = path.join(os.homedir(), "patreon-dl");
+// Override patreon-dl default output path to the locally-mounted SMB share
+// (//jermaineos.local/sul-sul-drive mounted at /mnt/jermaineos via /etc/fstab)
+const defaultOutputPath = "/mnt/jermaineos/Patreon";
 
 export function getStartupUIConfig(): UIConfig {
   return convertPatreonDLOptionsToUIConfig(getDefaultDownloaderOptions());

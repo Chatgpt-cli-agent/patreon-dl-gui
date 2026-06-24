@@ -1,9 +1,7 @@
 import MainWindow from "./MainWindow";
 import type { Editor } from "./types/App";
-import type { UICommand, ExecUICommandParams } from "./types/MainEvents";
-import type DownloaderConsoleLogger from "./DownloaderConsoleLogger";
 import { dialog } from "electron";
-import type PatreonDownloader from "patreon-dl";
+import type { UICommand, ExecUICommandParams } from "./types/MainEvents";
 import type { AppMenuOptions } from "./mixins/AppMenu";
 import { AppMenuSupportMixin } from "./mixins/AppMenu";
 import { DownloadEventSupportMixin } from "./mixins/DownloadEvents";
@@ -24,17 +22,10 @@ import { getWebBrowseSettings } from "./config/WebBrowserSettings";
 import { ensureAppDataPath } from "../common/util/FS";
 import { DEFAULT_MAIN_WINDOW_PROPS } from "./Constants";
 import { loadDefaultConfig } from "./config/DefaultConfig";
+import DownloadManager from "./download/DownloadManager";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type MainProcessConstructor = new (...args: any[]) => MainProcessBase;
-
-export interface DownloaderBundle {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  instance: PatreonDownloader<any>;
-  consoleLogger: DownloaderConsoleLogger;
-  abortController: AbortController;
-  status: "init" | "running" | "end";
-}
 
 export interface MainProcessBaseArgs {
   defaultUserAgent: string;
@@ -46,7 +37,7 @@ class MainProcessBase extends ProcessBase<"main"> {
   protected win: MainWindow;
   protected activeEditor: Editor | null;
   protected modifiedEditors: Editor[];
-  protected downloader: DownloaderBundle | null;
+  protected downloadManager: DownloadManager;
   protected defaultUserAgent: string;
   protected resolvedUserAgent: string;
   #cleanupCallbacks: (() => void)[];
@@ -67,7 +58,7 @@ class MainProcessBase extends ProcessBase<"main"> {
     });
     this.activeEditor = null;
     this.modifiedEditors = [];
-    this.downloader = null;
+    this.downloadManager = new DownloadManager(this.win);
     this.defaultUserAgent = args.defaultUserAgent;
     this.#cleanupCallbacks = [];
   }
@@ -172,24 +163,26 @@ class MainProcessBase extends ProcessBase<"main"> {
     e?.preventDefault();
     const confirmed = await new Promise<boolean>((resolve) => {
       (async () => {
-        if (this.downloader) {
-          if (this.downloader.status === "running") {
-            const confirmAbort =
-              (
-                await dialog.showMessageBox(this.win, {
-                  title: "Abort download?",
-                  message: `"Download is in progress. Abort download?`,
-                  buttons: ["Cancel", "Abort"],
-                  cancelId: 0,
-                  defaultId: 1
-                })
-              ).response === 1;
-            if (confirmAbort) {
-              this.downloader.abortController.abort();
-            } else {
-              resolve(false);
-              return;
-            }
+        const runningJobs = this.downloadManager.getRunningJobs();
+        if (runningJobs.length > 0) {
+          const confirmAbort =
+            (
+              await dialog.showMessageBox(this.win, {
+                title: "Abort downloads?",
+                message:
+                  runningJobs.length === 1 ?
+                    `1 download is in progress. Abort download?`
+                  : `${runningJobs.length} downloads are in progress. Abort downloads?`,
+                buttons: ["Cancel", "Abort"],
+                cancelId: 0,
+                defaultId: 1
+              })
+            ).response === 1;
+          if (confirmAbort) {
+            this.downloadManager.abortAll();
+          } else {
+            resolve(false);
+            return;
           }
         }
         if (this.modifiedEditors.length === 0) {
@@ -203,7 +196,7 @@ class MainProcessBase extends ProcessBase<"main"> {
         const confirmDiscard =
           (
             await dialog.showMessageBox(this.win, {
-              title: "Dischard unsaved changes?",
+              title: "Discard unsaved changes?",
               message,
               buttons: ["Cancel", "Discard"],
               cancelId: 0,

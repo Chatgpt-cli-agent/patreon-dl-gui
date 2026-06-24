@@ -149,7 +149,14 @@ const CommandsProvider = ({ children }: { children: React.ReactNode }) => {
     if (!activeEditor) {
       return;
     }
-    await window.mainAPI.invoke("startDownload", activeEditor);
+    try {
+      const jobId = await window.mainAPI.invoke("startDownload", activeEditor);
+      showToast("success", "Download added to Download Center");
+      return jobId;
+    } catch (err: unknown) {
+      showToast("error", err instanceof Error ? err.message : "Failed to start download");
+      throw err;
+    }
   }, [activeEditor]);
 
   const showHelpIcons = useCallback(

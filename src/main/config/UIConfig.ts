@@ -13,6 +13,8 @@ import {
 // Override patreon-dl default output path to the locally-mounted SMB share
 // (//jermaineos.local/sul-sul-drive mounted at /mnt/jermaineos via /etc/fstab)
 const defaultOutputPath = "/mnt/jermaineos/Patreon";
+// Put the post number AFTER the post title (default library order is id-then-name)
+const defaultContentDirNameFormat = "{content.name}[ - ]?{content.id}";
 
 export function getStartupUIConfig(): UIConfig {
   return convertPatreonDLOptionsToUIConfig(getDefaultDownloaderOptions());
@@ -77,7 +79,7 @@ function convertPatreonDLOptionsToUIConfig(
     output: {
       "out.dir": defaultOutputPath,
       "campaign.dir.name.format": p.dirNameFormat.campaign,
-      "content.dir.name.format": p.dirNameFormat.content,
+      "content.dir.name.format": defaultContentDirNameFormat,
       "media.filename.format": p.filenameFormat.media,
       "content.file.exists.action": p.fileExistsAction.content,
       "info.file.exists.action": p.fileExistsAction.info,

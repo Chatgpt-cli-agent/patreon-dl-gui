@@ -6,6 +6,7 @@ import "bootswatch/dist/darkly/bootstrap.min.css";
 import "material-icons/iconfont/material-icons.css";
 import "material-symbols";
 import "./styles/main.css";
+import "./styles/modern.css";
 import "../../common/ui/styles/components.css";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { CommandsProvider } from "./contexts/CommandsProvider";
@@ -127,7 +128,7 @@ function App() {
           >
             <EditorToolbar />
             <CustomScrollbars>
-              <div className="flex-fill px-2 py-3">
+              <div className="flex-fill px-2 py-3 pd-editor">
                 <ConfigProvider>
                   <EditorPanel />
                 </ConfigProvider>

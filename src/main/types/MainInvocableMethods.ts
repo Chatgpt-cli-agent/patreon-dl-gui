@@ -4,6 +4,10 @@ import type { UIConfig, UIConfigSection } from "./UIConfig";
 import type { SaveFileConfigResult } from "./MainEvents";
 import type { WebBrowserSettings } from "../config/WebBrowserSettings";
 import type { FSChooserResult } from "../../common/util/FS";
+import type {
+  DownloadCenterJobInfo,
+  ExternalLinkGroup
+} from "./DownloadCenter";
 
 export type MainProcessInvocableMethod =
   | "getEditorPanelWidth"
@@ -26,7 +30,13 @@ export type MainProcessInvocableMethod =
   | "webBrowserForward"
   | "webBrowserReload"
   | "startDownload"
-  | "abortDownload"
+  | "pauseDownload"
+  | "stopDownload"
+  | "resumeDownload"
+  | "clearFinishedDownloads"
+  | "getDownloadCenterJobs"
+  | "getExternalLinks"
+  | "removeDownload"
   | "configureYouTube"
   | "startYouTubeConnect"
   | "cancelYouTubeConnect"
@@ -60,8 +70,14 @@ export type MainProcessInvocableMethodHandler<
   : M extends "webBrowserBack" ? () => void
   : M extends "webBrowserForward" ? () => void
   : M extends "webBrowserReload" ? () => void
-  : M extends "startDownload" ? (editor: Editor) => void
-  : M extends "abortDownload" ? () => void
+  : M extends "startDownload" ? (editor: Editor) => Promise<string>
+  : M extends "pauseDownload" ? (jobId: string) => void
+  : M extends "stopDownload" ? (jobId: string) => void
+  : M extends "resumeDownload" ? (jobId: string) => void
+  : M extends "clearFinishedDownloads" ? () => void
+  : M extends "getDownloadCenterJobs" ? () => DownloadCenterJobInfo[]
+  : M extends "getExternalLinks" ? (outDir: string) => Promise<ExternalLinkGroup[]>
+  : M extends "removeDownload" ? (jobId: string) => void
   : M extends "configureYouTube" ? () => void
   : M extends "startYouTubeConnect" ? () => void
   : M extends "cancelYouTubeConnect" ? () => void

@@ -47,7 +47,12 @@ function EditorToolbar() {
   );
 
   return (
-    <Navbar bg="primary" sticky="top" style={{ height: "3rem" }}>
+    <Navbar
+      bg="primary"
+      sticky="top"
+      style={{ height: "3rem" }}
+      className="pd-editor-toolbar"
+    >
       <Container className="justify-content-start gap-1">
         {activeEditor ?
           <NavDropdown
@@ -89,7 +94,7 @@ function EditorToolbar() {
           icon="play_arrow"
           disabled={!activeEditor}
           onClick={startDownload}
-          tooltip="Start download"
+          tooltip="Add to Download Center"
         />
       </Container>
       {activeEditor ?

@@ -9,6 +9,7 @@ import { useEffect } from "react";
 import { Tab, Tabs } from "react-bootstrap";
 import { useCommands } from "../contexts/CommandsProvider";
 import NetworkBox from "./NetworkBox";
+import DownloadCenter from "./DownloadCenter";
 
 function EditorPanel() {
   const { closeActiveEditor } = useCommands();
@@ -79,6 +80,14 @@ function EditorPanel() {
           tabClassName="px-3"
         >
           <OtherBox />
+        </Tab>
+        <Tab
+          eventKey="editor-download-center"
+          title="Downloads"
+          className="border border-secondary border-top-0 py-2"
+          tabClassName="px-3"
+        >
+          <DownloadCenter />
         </Tab>
       </Tabs>
     </>

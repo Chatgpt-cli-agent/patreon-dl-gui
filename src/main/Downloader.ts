@@ -97,7 +97,8 @@ export function convertUIConfigToPatreonDLOptions(
         after: toDateTime(fileConfig.include["products.published.after"]),
         before: toDateTime(fileConfig.include["products.published.before"])
       },
-      comments: uiConfig.include.comments
+      comments: uiConfig.include.comments,
+      excludeByTitle: ["(Preview)", "(PUBLIC PICTURES)", "Sneak Pic"]
     },
     request: {
       maxRetries: uiConfig.request["max.retries"],

@@ -6,6 +6,9 @@ import type { DownloaderLogMessage } from "../DownloaderConsoleLogger";
 import type { RecentDocument } from "../util/RecentDocuments";
 import type { ApplyProxyResult } from "../MainWindow";
 import type {
+  DownloadCenterJobInfo
+} from "./DownloadCenter";
+import type {
   YouTubeConnectionStatus,
   YouTubeConnectResult,
   YouTubeConnectVerificationInfo
@@ -22,6 +25,8 @@ export type MainProcessRendererEvent =
   | "downloaderStart"
   | "downloaderEnd"
   | "downloaderLogMessage"
+  | "downloadCenter:jobsUpdate"
+  | "downloadCenter:log"
   | "execUICommand"
   | "requestHelpResult"
   | "aboutInfo"
@@ -176,6 +181,8 @@ export type MainProcessRendererEventListener<
   : E extends "downloaderStart" ? () => void
   : E extends "downloaderEnd" ? (info: DownloaderEndInfo) => void
   : E extends "downloaderLogMessage" ? (message: DownloaderLogMessage) => void
+  : E extends "downloadCenter:jobsUpdate" ? (jobs: DownloadCenterJobInfo[]) => void
+  : E extends "downloadCenter:log" ? (payload: { jobId: string; message: DownloadCenterJobInfo["logs"][number] }) => void
   : E extends "requestHelpResult" ? (result: RequestHelpResult) => void
   : E extends "execUICommand" ?
     <C extends UICommand>(command: C, ...params: ExecUICommandParams<C>) => void

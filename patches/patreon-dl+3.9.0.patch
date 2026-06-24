@@ -1,0 +1,158 @@
+diff --git a/node_modules/patreon-dl/dist/downloaders/DownloaderEvent.d.ts b/node_modules/patreon-dl/dist/downloaders/DownloaderEvent.d.ts
+index 6d34e12..19e3d9c 100644
+--- a/node_modules/patreon-dl/dist/downloaders/DownloaderEvent.d.ts
++++ b/node_modules/patreon-dl/dist/downloaders/DownloaderEvent.d.ts
+@@ -8,7 +8,8 @@ export declare enum TargetSkipReason {
+     AlreadyDownloaded = 1,
+     UnmetMediaTypeCriteria = 2,
+     NotInTier = 3,
+-    PublishDateOutOfRange = 4
++    PublishDateOutOfRange = 4,
++    ExcludedByTitle = 5
+ }
+ export interface DownloaderEventPayload {
+     'fetchBegin': {
+diff --git a/node_modules/patreon-dl/dist/downloaders/DownloaderEvent.js b/node_modules/patreon-dl/dist/downloaders/DownloaderEvent.js
+index 6de13be..a86510c 100644
+--- a/node_modules/patreon-dl/dist/downloaders/DownloaderEvent.js
++++ b/node_modules/patreon-dl/dist/downloaders/DownloaderEvent.js
+@@ -5,5 +5,6 @@ export var TargetSkipReason;
+     TargetSkipReason[TargetSkipReason["UnmetMediaTypeCriteria"] = 2] = "UnmetMediaTypeCriteria";
+     TargetSkipReason[TargetSkipReason["NotInTier"] = 3] = "NotInTier";
+     TargetSkipReason[TargetSkipReason["PublishDateOutOfRange"] = 4] = "PublishDateOutOfRange";
++    TargetSkipReason[TargetSkipReason["ExcludedByTitle"] = 5] = "ExcludedByTitle";
+ })(TargetSkipReason || (TargetSkipReason = {}));
+ //# sourceMappingURL=DownloaderEvent.js.map
+\ No newline at end of file
+diff --git a/node_modules/patreon-dl/dist/downloaders/DownloaderOptions.d.ts b/node_modules/patreon-dl/dist/downloaders/DownloaderOptions.d.ts
+index 50e6747..7911a87 100644
+--- a/node_modules/patreon-dl/dist/downloaders/DownloaderOptions.d.ts
++++ b/node_modules/patreon-dl/dist/downloaders/DownloaderOptions.d.ts
+@@ -30,6 +30,7 @@ export interface DownloaderIncludeOptions {
+     protectedMedia?: boolean;
+     allMediaVariants?: boolean;
+     mediaThumbnails?: boolean;
++    excludeByTitle?: string[];
+     mediaByFilename?: {
+         images?: string | null;
+         audio?: string | null;
+diff --git a/node_modules/patreon-dl/dist/downloaders/DownloaderOptions.js b/node_modules/patreon-dl/dist/downloaders/DownloaderOptions.js
+index e9d85ba..71ea633 100644
+--- a/node_modules/patreon-dl/dist/downloaders/DownloaderOptions.js
++++ b/node_modules/patreon-dl/dist/downloaders/DownloaderOptions.js
+@@ -39,7 +39,8 @@ const DEFAULT_DOWNLOADER_INIT = {
+             audio: null,
+             attachments: null
+         },
+-        comments: false
++        comments: false,
++        excludeByTitle: []
+     },
+     request: {
+         maxRetries: 3,
+@@ -111,7 +112,8 @@ export function getDownloaderInit(options) {
+                 audio: pickDefined(options?.include?.mediaByFilename?.audio, defaults.include.mediaByFilename.audio),
+                 attachments: pickDefined(options?.include?.mediaByFilename?.attachments, defaults.include.mediaByFilename.attachments)
+             },
+-            comments: pickDefined(options?.include?.comments, defaults.include.comments)
++            comments: pickDefined(options?.include?.comments, defaults.include.comments),
++            excludeByTitle: pickDefined(options?.include?.excludeByTitle, defaults.include.excludeByTitle)
+         },
+         request: {
+             maxRetries: pickDefined(options?.request?.maxRetries, defaults.request.maxRetries),
+diff --git a/node_modules/patreon-dl/dist/downloaders/IncludeCriteriaHelper.d.ts b/node_modules/patreon-dl/dist/downloaders/IncludeCriteriaHelper.d.ts
+index 2c7172e..c600051 100644
+--- a/node_modules/patreon-dl/dist/downloaders/IncludeCriteriaHelper.d.ts
++++ b/node_modules/patreon-dl/dist/downloaders/IncludeCriteriaHelper.d.ts
+@@ -6,7 +6,7 @@ export type IncludeCriteriaCheckPostResult = {
+     ok: true;
+ } | {
+     ok: false;
+-    reason: 'unviewable' | 'unmetMediaTypeCriteria' | 'notInTier' | 'publishDateOutOfRange';
++    reason: 'unviewable' | 'unmetMediaTypeCriteria' | 'notInTier' | 'publishDateOutOfRange' | 'excludedByTitle';
+ };
+ export type IncludeCriteriaCheckProductResult = {
+     ok: true;
+diff --git a/node_modules/patreon-dl/dist/downloaders/IncludeCriteriaHelper.js b/node_modules/patreon-dl/dist/downloaders/IncludeCriteriaHelper.js
+index 1a979d1..ab19102 100644
+--- a/node_modules/patreon-dl/dist/downloaders/IncludeCriteriaHelper.js
++++ b/node_modules/patreon-dl/dist/downloaders/IncludeCriteriaHelper.js
+@@ -83,6 +83,27 @@ export class IncludeCriteriaHelper {
+                 reason: 'publishDateOutOfRange'
+             };
+         }
++        // -- 5. Config option 'include.excludeByTitle'
++        const excludeByTitle = config.include.excludeByTitle;
++        if (Array.isArray(excludeByTitle) && excludeByTitle.length > 0 && post.title) {
++            const titleLower = post.title.toLowerCase();
++            for (const pattern of excludeByTitle) {
++                if (typeof pattern !== 'string') {
++                    continue;
++                }
++                const trimmed = pattern.trim();
++                if (!trimmed) {
++                    continue;
++                }
++                if (titleLower.includes(trimmed.toLowerCase())) {
++                    this.log('debug', 'Match criteria failed:', `config.include.excludeByTitle: ${JSON.stringify(trimmed)} <-> post #${post.id}:`, post.title);
++                    return {
++                        ok: false,
++                        reason: 'excludedByTitle'
++                    };
++                }
++            }
++        }
+         return {
+             ok: true
+         };
+diff --git a/node_modules/patreon-dl/dist/downloaders/PostDownloader.js b/node_modules/patreon-dl/dist/downloaders/PostDownloader.js
+index b0c47b1..f46e02a 100644
+--- a/node_modules/patreon-dl/dist/downloaders/PostDownloader.js
++++ b/node_modules/patreon-dl/dist/downloaders/PostDownloader.js
+@@ -133,6 +133,7 @@ _PostDownloader_startPromise = new WeakMap(), _PostDownloader_context = new Weak
+         let skippedUnmetMediaTypeCriteria = 0;
+         let skippedNotInTier = 0;
+         let skippedPublishDateOutOfRange = 0;
++        let skippedExcludedByTitle = 0;
+         let campaignSaved = false;
+         let stopConditionMet = false;
+         const savedCollectionIds = [];
+@@ -246,6 +247,9 @@ _PostDownloader_startPromise = new WeakMap(), _PostDownloader_context = new Weak
+                     case 'skippedUnviewable':
+                         skippedUnviewable++;
+                         break;
++                    case 'skippedExcludedByTitle':
++                        skippedExcludedByTitle++;
++                        break;
+                 }
+                 if (this.checkAbortSignal(signal)) {
+                     return;
+@@ -298,6 +302,9 @@ _PostDownloader_startPromise = new WeakMap(), _PostDownloader_context = new Weak
+             if (skippedPublishDateOutOfRange) {
+                 skippedStrParts.push(`${skippedPublishDateOutOfRange} with publish date out of range`);
+             }
++            if (skippedExcludedByTitle) {
++                skippedStrParts.push(`${skippedExcludedByTitle} excluded by title`);
++            }
+             const skippedStr = skippedStrParts.length > 0 ? ` (skipped: ${skippedStrParts.join(', ')})` : '';
+             endMessage = `Total ${downloaded} / ${postsFetcher.getTotal()} posts processed${skippedStr}`;
+             this.log('info', endMessage);
+@@ -369,6 +376,18 @@ _PostDownloader_startPromise = new WeakMap(), _PostDownloader_context = new Weak
+                     status: 'skippedPublishDateOutOfRange'
+                 };
+             }
++            case 'excludedByTitle': {
++                this.log('info', `Skipped downloading post #${post.id}: excluded by title pattern`);
++                this.emit('targetEnd', {
++                    target: post,
++                    isSkipped: true,
++                    skipReason: TargetSkipReason.ExcludedByTitle,
++                    skipMessage: 'Post title matches exclude pattern'
++                });
++                return {
++                    status: 'skippedExcludedByTitle'
++                };
++            }
+         }
+     }
+     if (!post.isViewable && this.config.include.lockedContent) {

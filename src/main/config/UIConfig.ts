@@ -10,9 +10,9 @@ import {
   getDefaultFileLoggerOptions,
   normalizeMaxVideoResolution
 } from "../util/Config";
-// Override patreon-dl default output path to the locally-mounted SMB share
-// (//jermaineos.local/sul-sul-drive mounted at /mnt/jermaineos via /etc/fstab)
-const defaultOutputPath = "/mnt/jermaineos/Patreon";
+// Default output path used when no settings file exists.
+export const DEFAULT_OUTPUT_PATH = "/mnt/San-Myshuno/PatreonDownloads-Staging";
+export const DEFAULT_PATH_TO_DENO = "";
 // Put the post number AFTER the post title (default library order is id-then-name)
 const defaultContentDirNameFormat = "{content.name}[ - ]?{content.id}";
 
@@ -43,18 +43,17 @@ function convertPatreonDLOptionsToUIConfig(
   const productsPublishedBefore = __convertPublishDate(
     p.include.productsPublished.before
   );
+  const mappedStopOn =
+    p.stopOn === "postPreviouslyDownloaded" ? "previouslyDownloaded"
+    : p.stopOn === "postPublishDateOutOfRange" ? "publishDateOutOfRange"
+    : p.stopOn;
+
   let maxVideoResolution: MaxVideoResolution;
   try {
     maxVideoResolution = normalizeMaxVideoResolution(p.maxVideoResolution);
   } catch (_) {
     maxVideoResolution = "none";
   }
-
-  // Ensure deprecated stopOn values not used
-  const stopOn =
-    p.stopOn === "postPreviouslyDownloaded" ? "previouslyDownloaded"
-    : p.stopOn === "postPublishDateOutOfRange" ? "publishDateOutOfRange"
-    : p.stopOn;
 
   const conf: UIConfig = {
     downloader: {
@@ -69,15 +68,15 @@ function convertPatreonDLOptionsToUIConfig(
         manualValue: ""
       },
       "path.to.ffmpeg": p.pathToFFmpeg || "",
-      "path.to.deno": p.pathToDeno || "",
+      "path.to.deno": p.pathToDeno || DEFAULT_PATH_TO_DENO,
       "max.video.resolution": maxVideoResolution,
       "use.status.cache": p.useStatusCache,
-      "stop.on": stopOn,
+      "stop.on": mappedStopOn,
       "no.prompt": false,
       "dry.run": p.dryRun
     },
     output: {
-      "out.dir": defaultOutputPath,
+      "out.dir": DEFAULT_OUTPUT_PATH,
       "campaign.dir.name.format": p.dirNameFormat.campaign,
       "content.dir.name.format": defaultContentDirNameFormat,
       "media.filename.format": p.filenameFormat.media,

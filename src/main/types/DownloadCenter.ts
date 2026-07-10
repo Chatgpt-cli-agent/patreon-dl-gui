@@ -29,13 +29,3 @@ export interface DownloadCenterJobInfo {
   endTime: number | null;
   logs: DownloadCenterLogEntry[];
 }
-
-export interface ExternalLink {
-  title: string;
-  url: string;
-}
-
-export interface ExternalLinkGroup {
-  source: string;
-  links: ExternalLink[];
-}

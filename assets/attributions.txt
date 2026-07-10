@@ -1,1 +1,1 @@
-electron.ico - icons-icons.com
+icon.svg, icon.png, icon.ico, electron.ico - custom app icon generated for this project.

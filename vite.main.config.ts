@@ -39,6 +39,7 @@ export default defineConfig((env) => {
           "utf-8-validate",
           "undici", // ^6.21.3
           "patreon-dl", // ^3.9.0
+          "better-sqlite3", // native module used by ExternalLinksRegen
 
           ...builtinModules,
           ...builtinModules.map(m => `node:${m}`)

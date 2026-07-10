@@ -33,6 +33,14 @@ export interface MainProcessBaseArgs {
 
 const processArgs = parseArgs(process.argv);
 
+function getStringArg(name: string) {
+  const value = processArgs[name];
+  if (Array.isArray(value)) {
+    return typeof value[0] === "string" ? value[0] : "";
+  }
+  return typeof value === "string" ? value : "";
+}
+
 class MainProcessBase extends ProcessBase<"main"> {
   protected win: MainWindow;
   protected activeEditor: Editor | null;
@@ -132,6 +140,11 @@ class MainProcessBase extends ProcessBase<"main"> {
     }
     if (!config) {
       config = getStartupUIConfig();
+    }
+    const targetURL = getStringArg("target-url").trim();
+    if (targetURL) {
+      config.downloader.target.inputMode = "manual";
+      config.downloader.target.manualValue = targetURL;
     }
 
     const filePath = props?.filePath || null;

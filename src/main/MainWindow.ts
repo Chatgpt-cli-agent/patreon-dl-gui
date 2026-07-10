@@ -53,6 +53,8 @@ export default class MainWindow extends BaseWindow {
 
   constructor(props: MainWindowProps) {
     super();
+    this.setResizable(true);
+
     const devTools = props.devTools;
     this.#initialWebBrowserProps = {
       url: props.webBrowserViewInitialURL,

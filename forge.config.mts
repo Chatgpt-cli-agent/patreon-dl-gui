@@ -3,7 +3,6 @@ import { fileURLToPath } from 'url';
 import type { ForgeConfig } from '@electron-forge/shared-types';
 import { MakerWix } from '@electron-forge/maker-wix';
 import { MakerZIP } from '@electron-forge/maker-zip';
-import { MakerDeb } from '@electron-forge/maker-deb';
 import { MakerRpm, MakerRpmConfig } from '@electron-forge/maker-rpm';
 import { AutoUnpackNativesPlugin } from '@electron-forge/plugin-auto-unpack-natives';
 import { VitePlugin } from '@electron-forge/plugin-vite';
@@ -19,9 +18,42 @@ const __dirname = path.dirname(__filename);
 const isMakePhase = process.env.FORGE_PHASE === 'make';
 const isPackagePhase = process.env.FORGE_PHASE === 'package';
 
+function commandExists(command: string) {
+  try {
+    execSync(`command -v ${command}`, { stdio: 'ignore' });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+const linuxMakers = [
+  ...(commandExists('rpmbuild') ? [
+    new MakerRpm({
+      specTemplate: path.join(__dirname, 'misc/rpm-spec.ejs'),
+      scripts: {
+        post: path.join(__dirname, 'src/resources/packaging/rpm/postinstall.sh'),
+        postun: path.join(__dirname, 'src/resources/packaging/rpm/postuninstall.sh')
+      },
+      options: {
+        /**
+         * Note: we override maker-rpm package with latest version, and set
+         * `specTemplate` to point to our custom spec file. The custom spec
+         * disables stripping of the patreon-dl-embed binary, which would otherwise
+         * throw "Pkg: Error reading from file" when executed.
+         */
+      } as MakerRpmConfig['options']
+    } as MakerRpmConfig & {
+      specTemplate: string;
+      scripts: { post: string; postun: string };
+    })
+  ] : []),
+];
+
 const config: ForgeConfig = {
   packagerConfig: {
     asar: true,
+    icon: path.join(__dirname, 'assets/icon'),
     extraResource: [
       path.join(__dirname, 'resources_out/bin'),
       path.join(
@@ -33,7 +65,7 @@ const config: ForgeConfig = {
   rebuildConfig: {},
   makers: [
     new MakerWix({
-      icon: path.join(__dirname, 'assets/electron.ico'),
+      icon: path.join(__dirname, 'assets/icon.ico'),
       shortcutFolderName: packageJSON.productName,
       beforeCreate: async (msiCreator) => {
         // Load custom Wix XML template which:
@@ -44,29 +76,7 @@ const config: ForgeConfig = {
       }
     }),
     new MakerZIP({}, ['darwin']),
-    new MakerRpm({
-      options: {
-        /**
-         * Note: we override maker-rpm package with latest version, and set 
-         * `specTemplate` to point to our custom spec file. The custom spec
-         * disables stripping of the patreon-dl-embed binary, which would otherwise 
-         * throw "Pkg: Error reading from file" when executed.
-         */
-        specTemplate: path.join(__dirname, '/misc/rpm-spec.ejs'),
-        scripts: {
-          post: path.join(__dirname, 'src/resources/packaging/rpm/postinstall.sh'),
-          postun: path.join(__dirname, 'src/resources/packaging/rpm/postuninstall.sh')
-        }
-      } as MakerRpmConfig['options']
-    }),
-    new MakerDeb({
-      options: {
-        scripts: {
-          postinst: path.join(__dirname, 'src/resources/packaging/deb/postinst'),
-          postrm: path.join(__dirname, 'src/resources/packaging/deb/postrm')
-        }
-      }
-    })
+    ...linuxMakers
   ],
   plugins: [
     ...(isMakePhase || isPackagePhase ? [

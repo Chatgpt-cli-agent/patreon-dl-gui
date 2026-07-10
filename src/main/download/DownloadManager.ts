@@ -1,4 +1,4 @@
-import PatreonDownloader, { isDenoInstalled } from "patreon-dl";
+import PatreonDownloader from "patreon-dl";
 import { convertUIConfigToPatreonDLOptions } from "../Downloader";
 import type DownloaderConsoleLogger from "../DownloaderConsoleLogger";
 import type { Editor } from "../types/App";
@@ -10,9 +10,10 @@ import type {
 import type { UIConfig } from "../types/UIConfig";
 import { convertUIConfigToFileContents } from "../config/FileConfig";
 import { getErrorString } from "../../common/util/Misc";
-import { dialog, type BaseWindow } from "electron";
+import { type BaseWindow } from "electron";
 import EventEmitter from "events";
 import type { FileLogger, FileLoggerType } from "patreon-dl";
+import { ExternalLinksCollector } from "../util/ExternalLinksWriter";
 
 const MAX_LOG_ENTRIES = 500;
 const DEFAULT_MAX_CONCURRENT = 20;
@@ -52,7 +53,6 @@ export default class DownloadManager extends EventEmitter {
   #jobs: DownloadJob[] = [];
   #maxConcurrent: number;
   #window: BaseWindow;
-  #denoWarningShown = false;
   #queueCheckScheduled = false;
 
   constructor(window: BaseWindow, maxConcurrent = DEFAULT_MAX_CONCURRENT) {
@@ -350,6 +350,15 @@ export default class DownloadManager extends EventEmitter {
     };
     job.consoleLogger?.on("message", logListener);
 
+    const externalLinksCollector = new ExternalLinksCollector({
+      outDir: job.outDir,
+      log: (level, message) => {
+        this.#addLog(job, { text: message, level });
+      }
+    });
+    const detachExternalLinksCollector =
+      externalLinksCollector.attach(job.instance);
+
     try {
       await job.instance.start({ signal: abortController.signal });
       if (
@@ -384,6 +393,8 @@ export default class DownloadManager extends EventEmitter {
       if ((job.status as DownloadJobStatus) !== "paused") {
         job.endTime = Date.now();
       }
+      await externalLinksCollector.flushNow();
+      detachExternalLinksCollector();
       job.consoleLogger?.removeAllListeners();
       this.#emitJobs();
       this.#processQueue();
@@ -441,34 +452,10 @@ export default class DownloadManager extends EventEmitter {
 
   async #showDenoMissingWarningDialog(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    config: ReturnType<PatreonDownloader<any>["getConfig"]>
+    _config: ReturnType<PatreonDownloader<any>["getConfig"]>
   ) {
-    if (this.#denoWarningShown) {
-      return;
-    }
-    const ytExternalDownloader =
-      config.embedDownloaders &&
-      config.embedDownloaders.find(
-        (downloader: { provider: string; exec?: string }) =>
-          downloader.provider === "YouTube" && downloader.exec
-      );
-    if (
-      !ytExternalDownloader &&
-      !isDenoInstalled(config.pathToDeno || undefined).installed
-    ) {
-      const result = await dialog.showMessageBox(this.#window, {
-        type: "warning",
-        buttons: ["Got it"],
-        checkboxLabel: "Do not show me again for the rest of this session",
-        defaultId: 0,
-        title: "Warning",
-        message: "Deno not found",
-        detail:
-          'Deno (https://deno.com) is not found on this system. For embedded YouTube videos, the downloader needs to run code obtained from YouTube / Google servers. Without Deno, such code will be executed without sandboxing. Running un-sandboxed code exposes your system to potential security vulnerabilities, including unauthorized access, data corruption, or malicious operations. If you do have Deno installed, you may specify its path manually in the "Other" tab. Otherwise, proceed at your own discretion.'
-      });
-      if (result.checkboxChecked) {
-        this.#denoWarningShown = true;
-      }
-    }
+    // Deno is only relevant to the built-in YouTube embed downloader. This
+    // build treats it as optional so normal Patreon post/file jobs are not
+    // interrupted by a warning dialog on every session.
   }
 }

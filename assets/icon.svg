@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-label="Patreon downloads app icon">
+  <defs>
+    <linearGradient id="bg" x1="152" y1="96" x2="872" y2="928" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ff7058"/>
+      <stop offset="1" stop-color="#c73645"/>
+    </linearGradient>
+    <linearGradient id="panel" x1="272" y1="246" x2="752" y2="810" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff8f3"/>
+      <stop offset="1" stop-color="#ffd9cd"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="34" stdDeviation="32" flood-color="#64141d" flood-opacity="0.32"/>
+    </filter>
+  </defs>
+  <rect width="1024" height="1024" rx="232" fill="url(#bg)"/>
+  <circle cx="724" cy="258" r="108" fill="#ffb3a3" opacity="0.95"/>
+  <path d="M302 270c0-35 28-63 63-63h189c130 0 232 96 232 222 0 129-102 224-232 224H429v110c0 35-28 63-63 63s-64-28-64-63V270zm127 60v201h119c64 0 111-43 111-102s-47-99-111-99H429z" fill="url(#panel)" filter="url(#shadow)"/>
+  <path d="M518 621c0-24 20-44 44-44s44 20 44 44v104l42-42c17-17 45-17 62 0s17 45 0 62L593 862c-17 17-45 17-62 0L414 745c-17-17-17-45 0-62s45-17 62 0l42 42V621z" fill="#ffffff"/>
+  <rect x="390" y="865" width="344" height="58" rx="29" fill="#ffffff" opacity="0.95"/>
+</svg>

@@ -156,3 +156,94 @@ index b0c47b1..f46e02a 100644
          }
      }
      if (!post.isViewable && this.config.include.lockedContent) {
+diff --git a/node_modules/patreon-dl/dist/parsers/Parser.js b/node_modules/patreon-dl/dist/parsers/Parser.js
+index 9ea610e..6d2e71d 100644
+--- a/node_modules/patreon-dl/dist/parsers/Parser.js
++++ b/node_modules/patreon-dl/dist/parsers/Parser.js
+@@ -608,6 +608,7 @@ class Parser {
+         }
+         if (nextURL && !nextPageCursor) {
+             this.log('warn', `Anomaly in API response of "${_url}: (pagination) next page cursor expected but missing`);
++            realNextURL = nextURL;
+         }
+         return realNextURL;
+     }
+diff --git a/node_modules/patreon-dl/dist/utils/FSHelper.js b/node_modules/patreon-dl/dist/utils/FSHelper.js
+index 6e996c1..3e06796 100644
+--- a/node_modules/patreon-dl/dist/utils/FSHelper.js
++++ b/node_modules/patreon-dl/dist/utils/FSHelper.js
+@@ -73,6 +73,8 @@ export default class FSHelper {
+             postRootPath = path.resolve(this.config.outDir, dirName);
+             statusCachePath = path.resolve(postRootPath, INTERNAL_DATA_DIR_NAME);
+         }
++        this.createDir(postRootPath);
++        this.createDir(path.resolve(postRootPath, POST_FIXED_DIR_NAMES.ATTACHMENTS));
+         return {
+             root: postRootPath,
+             info: path.resolve(postRootPath, POST_FIXED_DIR_NAMES.INFO),
+diff --git a/node_modules/patreon-dl/dist/utils/FilenameFormatHelper.js b/node_modules/patreon-dl/dist/utils/FilenameFormatHelper.js
+index 86ba2ff..ff3f451 100644
+--- a/node_modules/patreon-dl/dist/utils/FilenameFormatHelper.js
++++ b/node_modules/patreon-dl/dist/utils/FilenameFormatHelper.js
+@@ -32,6 +32,13 @@ export const MEDIA_FILENAME_VALIDATION_SCHEMA = [
+ const CAMPAIGN_DIR_NAME_FALLBACK_FORMAT = 'campaign-{campaign.id}';
+ const CONTENT_DIR_NAME_FALLBACK_FORMAT = '{content.type}-{content.id}';
+ const MEDIA_FILENAME_FALLBACK_FORMAT = '{media.type}-{media.id}';
++function cleanContentNameForDir(name) {
++    return name
++        ?.replace(/^\s*[\[(]?\s*download\s*[\])]?[\s:._-]*/i, '')
++        .replace(/\s*[\[(]\s*download\s*[\])]\s*/gi, ' ')
++        .replace(/\s{2,}/g, ' ')
++        .trim() || name;
++}
+ class FilenameFormatHelper {
+     static getCampaignDirName(campaign, format) {
+         const dict = {
+@@ -54,12 +61,12 @@ class FilenameFormatHelper {
+         if (content.type === 'post') {
+             const urlAnalysis = content.url ? URLHelper.analyzeURL(content.url) : null;
+             dict['content.slug'] = urlAnalysis && urlAnalysis.type === 'post' ? urlAnalysis.slug : null;
+-            dict['content.name'] = content.title;
++            dict['content.name'] = cleanContentNameForDir(content.title);
+         }
+         else if (content.type === 'product') {
+             const urlAnalysis = URLHelper.analyzeURL(content.url);
+             dict['content.slug'] = urlAnalysis && urlAnalysis.type === 'product' ? urlAnalysis.slug : null;
+-            dict['content.name'] = content.name;
++            dict['content.name'] = cleanContentNameForDir(content.name);
+         }
+         return __classPrivateFieldGet(this, _a, "m", _FilenameFormatHelper_getFilename).call(this, format, dict, CONTENT_DIR_NAME_VALIDATION_SCHEMA, CONTENT_DIR_NAME_FALLBACK_FORMAT);
+     }
+@@ -71,7 +78,7 @@ class FilenameFormatHelper {
+             'content.id': collection.id,
+             'content.type': collection.type,
+             'content.slug': slug,
+-            'content.name': collection.title,
++            'content.name': cleanContentNameForDir(collection.title),
+             'content.publishDate': collection.createdAt ? toISODate(collection.createdAt) : null
+         };
+         return __classPrivateFieldGet(this, _a, "m", _FilenameFormatHelper_getFilename).call(this, format, dict, CONTENT_DIR_NAME_VALIDATION_SCHEMA, CONTENT_DIR_NAME_FALLBACK_FORMAT);
+diff --git a/node_modules/patreon-dl/dist/utils/URLHelper.d.ts b/node_modules/patreon-dl/dist/utils/URLHelper.d.ts
+index 2f8763b..c251981 100644
+--- a/node_modules/patreon-dl/dist/utils/URLHelper.d.ts
++++ b/node_modules/patreon-dl/dist/utils/URLHelper.d.ts
+@@ -46,6 +46,7 @@ export default class URLHelper {
+         currentUserId?: string;
+         filters?: Record<string, any>;
+         sort?: PostSortOrder;
++        count?: number;
+     }): string;
+     static constructPostCommentsAPIURL(params: {
+         postId: string;
+diff --git a/node_modules/patreon-dl/dist/utils/URLHelper.js b/node_modules/patreon-dl/dist/utils/URLHelper.js
+index 1be9c55..ce6f3d1 100644
+--- a/node_modules/patreon-dl/dist/utils/URLHelper.js
++++ b/node_modules/patreon-dl/dist/utils/URLHelper.js
+@@ -319,6 +319,7 @@ export default class URLHelper {
+         const searchParams = {
+             'include': POSTS_API_URL_SEARCH_PARAMS.INCLUDE.join(','),
+             'sort': params.sort || PostSortOrder.PublisedAtDesc,
++            'page[count]': params.count || 100,
+             'json-api-version': '1.0'
+         };
+         for (const [key, value] of Object.entries(allFilters)) {

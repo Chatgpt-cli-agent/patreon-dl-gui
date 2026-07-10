@@ -6,15 +6,12 @@ import { useConfig } from "../contexts/ConfigProvider";
 import { Container, Card } from "react-bootstrap";
 import { useMemo } from "react";
 import _ from "lodash";
-import type { StopOnCondition } from "patreon-dl";
-import SelectRow from "./components/SelectRow";
 
 interface DownloadBoxState {
   target: UIConfig["downloader"]["target"];
   outDir: string;
   cookie: UIConfig["downloader"]["cookie"];
   useStatusCache: boolean;
-  stopOn: StopOnCondition;
 }
 
 let oldState: DownloadBoxState | null = null;
@@ -24,8 +21,7 @@ function getDownloadBoxState(config: UIConfig): DownloadBoxState {
     target: config.downloader.target,
     outDir: config.output["out.dir"],
     cookie: config.downloader.cookie,
-    useStatusCache: config.downloader["use.status.cache"],
-    stopOn: config.downloader["stop.on"]
+    useStatusCache: config.downloader["use.status.cache"]
   };
   if (oldState && _.isEqual(oldState, state)) {
     return oldState;
@@ -67,23 +63,6 @@ function DownloadBox() {
               config={["downloader", "use.status.cache"]}
               label="Use status cache"
               helpTooltip="Use status cache to quickly skip previously downloaded items."
-              helpHasMoreInfo
-            />
-            <SelectRow
-              config={["downloader", "stop.on"]}
-              label="Stop condition"
-              options={[
-                { label: "None (run till the end)", value: "never" },
-                {
-                  label: "Previously downloaded item encountered",
-                  value: "previouslyDownloaded"
-                },
-                {
-                  label: "Publish date of item out of specified range",
-                  value: "publishDateOutOfRange"
-                }
-              ]}
-              helpTooltip="When to stop the downloader."
               helpHasMoreInfo
             />
           </Container>

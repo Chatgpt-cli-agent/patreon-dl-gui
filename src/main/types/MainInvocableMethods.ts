@@ -4,10 +4,13 @@ import type { UIConfig, UIConfigSection } from "./UIConfig";
 import type { SaveFileConfigResult } from "./MainEvents";
 import type { WebBrowserSettings } from "../config/WebBrowserSettings";
 import type { FSChooserResult } from "../../common/util/FS";
+import type { DownloadCenterJobInfo } from "./DownloadCenter";
 import type {
-  DownloadCenterJobInfo,
-  ExternalLinkGroup
-} from "./DownloadCenter";
+  SimsInstallResult,
+  SimsInstallSettings,
+  SimsLibraryItem,
+  SimsScanResult
+} from "../util/SimsContentInstaller";
 
 export type MainProcessInvocableMethod =
   | "getEditorPanelWidth"
@@ -35,7 +38,15 @@ export type MainProcessInvocableMethod =
   | "resumeDownload"
   | "clearFinishedDownloads"
   | "getDownloadCenterJobs"
-  | "getExternalLinks"
+  | "listDownloadedCreators"
+  | "exportCreatorExternalLinks"
+  | "repairCreatorDownloadState"
+  | "clearExternalLinkFiles"
+  | "getSimsInstallSettings"
+  | "scanSimsContent"
+  | "installSimsContent"
+  | "listSimsLibrary"
+  | "openInFileManager"
   | "removeDownload"
   | "configureYouTube"
   | "startYouTubeConnect"
@@ -76,7 +87,58 @@ export type MainProcessInvocableMethodHandler<
   : M extends "resumeDownload" ? (jobId: string) => void
   : M extends "clearFinishedDownloads" ? () => void
   : M extends "getDownloadCenterJobs" ? () => DownloadCenterJobInfo[]
-  : M extends "getExternalLinks" ? (outDir: string) => Promise<ExternalLinkGroup[]>
+  : M extends "listDownloadedCreators" ?
+    (outDir: string) => Array<{
+      id: string;
+      name: string;
+      postCount: number;
+      expectedPostCount: number | null;
+      firstPublishedAt: string | null;
+      lastPublishedAt: string | null;
+      postsWithLinks: number;
+      totalLinks: number;
+      hasExternalLinks: boolean;
+      mediaFileCount: number;
+      filesPresent: number;
+      filesMissing: number;
+      status:
+        | "complete"
+        | "needsRepair"
+        | "linksPending"
+        | "metadataOnly"
+        | "incompleteScan";
+      campaignFolder: string | null;
+    }>
+  : M extends "exportCreatorExternalLinks" ?
+    (outDir: string, creatorIds: string[], targetFolder: string) =>
+      Promise<{
+        filesWritten: string[];
+        filesSkipped: string[];
+        errors: string[];
+      }>
+  : M extends "repairCreatorDownloadState" ?
+    (outDir: string, creatorId: string) => {
+      success: boolean;
+      creatorId: string;
+      creatorName: string | null;
+      creatorURL: string | null;
+      campaignFolder: string | null;
+      deletedRows: Record<string, number>;
+      removedFiles: string[];
+      errors: string[];
+    }
+  : M extends "clearExternalLinkFiles" ?
+    (outDir: string, targetFolder?: string | null) => {
+      removedFiles: string[];
+      deletedRows: Record<string, number>;
+      errors: string[];
+    }
+  : M extends "getSimsInstallSettings" ? () => SimsInstallSettings
+  : M extends "scanSimsContent" ? (sourceRoot: string) => Promise<SimsScanResult>
+  : M extends "installSimsContent" ?
+    (sourceRoot: string) => Promise<SimsInstallResult>
+  : M extends "listSimsLibrary" ? () => SimsLibraryItem[]
+  : M extends "openInFileManager" ? (folder: string) => void
   : M extends "removeDownload" ? (jobId: string) => void
   : M extends "configureYouTube" ? () => void
   : M extends "startYouTubeConnect" ? () => void

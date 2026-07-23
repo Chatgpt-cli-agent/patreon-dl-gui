@@ -10,10 +10,14 @@ import type {
 import type { UIConfig } from "../types/UIConfig";
 import { convertUIConfigToFileContents } from "../config/FileConfig";
 import { getErrorString } from "../../common/util/Misc";
-import { type BaseWindow } from "electron";
 import EventEmitter from "events";
 import type { FileLogger, FileLoggerType } from "patreon-dl";
 import { ExternalLinksCollector } from "../util/ExternalLinksWriter";
+import {
+  extractDownloadedArchive,
+  extractDownloadedArchives
+} from "../util/ArchiveExtractor";
+import chokidar, { type FSWatcher } from "chokidar";
 
 const MAX_LOG_ENTRIES = 500;
 const DEFAULT_MAX_CONCURRENT = 20;
@@ -52,12 +56,11 @@ type DownloadManagerEvent = "jobsUpdate" | "log";
 export default class DownloadManager extends EventEmitter {
   #jobs: DownloadJob[] = [];
   #maxConcurrent: number;
-  #window: BaseWindow;
   #queueCheckScheduled = false;
+  #archiveWatchers = new Map<string, FSWatcher>();
 
-  constructor(window: BaseWindow, maxConcurrent = DEFAULT_MAX_CONCURRENT) {
+  constructor(maxConcurrent = DEFAULT_MAX_CONCURRENT) {
     super();
-    this.#window = window;
     this.#maxConcurrent = Math.max(1, maxConcurrent);
   }
 
@@ -105,6 +108,7 @@ export default class DownloadManager extends EventEmitter {
     };
 
     this.#jobs.push(job);
+    this.#watchArchiveRoot(job.outDir);
     this.#emitJobs();
 
     try {
@@ -250,6 +254,16 @@ export default class DownloadManager extends EventEmitter {
       .forEach((job) => this.pauseJob(job.id));
   }
 
+  async closeArchiveWatchers() {
+    const watchers = [...this.#archiveWatchers.values()];
+    this.#archiveWatchers.clear();
+    await Promise.all(watchers.map((watcher) => watcher.close()));
+  }
+
+  watchArchiveRoot(outDir: string) {
+    this.#watchArchiveRoot(outDir);
+  }
+
   on(event: DownloadManagerEvent, listener: (...args: unknown[]) => void) {
     return super.on(event, listener);
   }
@@ -264,6 +278,46 @@ export default class DownloadManager extends EventEmitter {
 
   #createJobId() {
     return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+  }
+
+  #watchArchiveRoot(outDir: string) {
+    if (!outDir || this.#archiveWatchers.has(outDir)) {
+      return;
+    }
+    const watcher = chokidar.watch(outDir, {
+      ignoreInitial: true,
+      awaitWriteFinish: {
+        stabilityThreshold: 2000,
+        pollInterval: 200
+      }
+    });
+    watcher.on("add", async (filePath) => {
+      if (!/\.(?:zip|rar)$/i.test(filePath)) {
+        return;
+      }
+      const result = await extractDownloadedArchive(filePath);
+      const job = [...this.#jobs]
+        .reverse()
+        .find((candidate) => candidate.outDir === outDir);
+      if (!job) {
+        return;
+      }
+      if (result.status === "extracted") {
+        this.#addLog(job, {
+          text: `Automatically extracted archive without removing the original: ${result.archivePath} → ${result.destinationPath}`,
+          level: "info"
+        });
+      } else if (result.status === "error") {
+        this.#addLog(job, {
+          text: `Archive extraction warning for ${result.archivePath}: ${result.error}`,
+          level: "warning"
+        });
+      }
+    });
+    watcher.on("error", (error) => {
+      console.error(`Archive watcher error for ${outDir}:`, error);
+    });
+    this.#archiveWatchers.set(outDir, watcher);
   }
 
   #getOutDir(config: UIConfig): string {
@@ -394,6 +448,21 @@ export default class DownloadManager extends EventEmitter {
         job.endTime = Date.now();
       }
       await externalLinksCollector.flushNow();
+      if ((job.status as DownloadJobStatus) === "completed" && job.outDir) {
+        const extractionResult = await extractDownloadedArchives(job.outDir);
+        for (const entry of extractionResult.extracted) {
+          this.#addLog(job, {
+            text: `Extracted archive without removing the original: ${entry.archivePath} → ${entry.destinationPath}`,
+            level: "info"
+          });
+        }
+        for (const entry of extractionResult.errors) {
+          this.#addLog(job, {
+            text: `Archive extraction warning for ${entry.archivePath}: ${entry.error}`,
+            level: "warning"
+          });
+        }
+      }
       detachExternalLinksCollector();
       job.consoleLogger?.removeAllListeners();
       this.#emitJobs();

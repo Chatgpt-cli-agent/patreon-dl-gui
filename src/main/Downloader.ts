@@ -75,20 +75,18 @@ export function convertUIConfigToPatreonDLOptions(
       lockedContent: uiConfig.include["locked.content"],
       campaignInfo: uiConfig.include["campaign.info"],
       contentInfo: uiConfig.include["content.info"],
-      contentMedia: fromCustomSelectionValue(uiConfig.include["content.media"]),
-      previewMedia: fromCustomSelectionValue(uiConfig.include["preview.media"]),
+      contentMedia: true,
+      previewMedia: false,
       protectedMedia: uiConfig.include["protected.media"],
       allMediaVariants: uiConfig.include["all.media.variants"],
-      mediaThumbnails: uiConfig.include["media.thumbnails"],
+      mediaThumbnails: false,
       mediaByFilename: {
-        images: fileConfig.include["images.by.filename"],
-        audio: fileConfig.include["audio.by.filename"],
-        attachments: fileConfig.include["attachments.by.filename"]
+        images: "",
+        audio: "",
+        attachments: ""
       },
       postsInTier: fromCustomSelectionValue(uiConfig.include["posts.in.tier"]),
-      postsWithMediaType: fromCustomSelectionValue(
-        uiConfig.include["posts.with.media.type"]
-      ),
+      postsWithMediaType: "any",
       postsPublished: {
         after: toDateTime(fileConfig.include["posts.published.after"]),
         before: toDateTime(fileConfig.include["posts.published.before"])
@@ -98,7 +96,19 @@ export function convertUIConfigToPatreonDLOptions(
         before: toDateTime(fileConfig.include["products.published.before"])
       },
       comments: uiConfig.include.comments,
-      excludeByTitle: ["(Preview)", "(PUBLIC PICTURES)", "Sneak Pic"]
+      // Skip teaser/preview posts before download (case-insensitive substring match).
+      excludeByTitle: [
+        " Preview",
+        "(Preview)",
+        "(PUBLIC PICTURES)",
+        "PUBLIC PICTURES",
+        "Sneak Pic",
+        "Wips",
+        "(WIP)",
+        " WIP",
+        "WIP",
+        "work in progress"
+      ]
     },
     request: {
       maxRetries: uiConfig.request["max.retries"],

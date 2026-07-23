@@ -873,8 +873,8 @@ function findDownloadedCampaignFolder(
   const name = campaign.name || `campaign-${campaign.id}`;
   const vanity = "vanity" in campaign ? String(campaign.vanity || "") : "";
   const candidates = [
-    vanity && name ? path.resolve(outDir, `${sanitizeFileName(vanity)} - ${sanitizeFileName(name)}`) : "",
     path.resolve(outDir, sanitizeFileName(name)),
+    vanity && name ? path.resolve(outDir, `${sanitizeFileName(vanity)} - ${sanitizeFileName(name)}`) : "",
     path.resolve(outDir, `campaign-${campaign.id}`)
   ].filter(Boolean);
   for (const candidate of candidates) {
@@ -887,16 +887,7 @@ function findDownloadedCampaignFolder(
 
 function getFallbackCampaignFolder(outDir: string, campaign: Campaign): string {
   const name = campaign.name || `campaign-${campaign.id}`;
-  const rawCampaign = campaign as Campaign & {
-    vanity?: string;
-    creator?: { vanity?: string };
-  };
-  const vanity = rawCampaign.creator?.vanity || rawCampaign.vanity || "";
-  const campaignDirName =
-    vanity && name ?
-      `${sanitizeFileName(vanity)} - ${sanitizeFileName(name)}`
-    : sanitizeFileName(name);
-  return path.resolve(outDir, campaignDirName);
+  return path.resolve(outDir, sanitizeFileName(name));
 }
 
 function getFallbackPostFolder(campaignFolder: string, post: Post): string {
@@ -907,8 +898,8 @@ function getFallbackPostFolder(campaignFolder: string, post: Post): string {
 function cleanContentNameForDir(name: string): string {
   return (
     name
-      .replace(/^\s*[\[(]?\s*download\s*[\])]?[\s:._-]*/i, "")
-      .replace(/\s*[\[(]\s*download\s*[\])]\s*/gi, " ")
+      .replace(/^\s*[[(]?\s*download\s*[\])]?[\s:._-]*/i, "")
+      .replace(/\s*[[(]\s*download\s*[\])]\s*/gi, " ")
       .replace(/\s{2,}/g, " ")
       .trim() || name
   );

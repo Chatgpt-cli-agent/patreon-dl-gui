@@ -147,6 +147,15 @@ const config: ForgeConfig = {
           }
         }, null, 2));
         execSync('npm install --omit=dev', { cwd: appDir, stdio: 'inherit' });
+        // Stock npm patreon-dl drops our local patch-package changes (excludeByTitle,
+        // etc.). Replace it with the patched copy from this workspace.
+        const localPatreonDl = path.join(__dirname, 'node_modules/patreon-dl');
+        const packagedPatreonDl = path.join(appDir, 'node_modules/patreon-dl');
+        if (!fs.existsSync(localPatreonDl)) {
+          throw new Error(`Patched patreon-dl missing at ${localPatreonDl}`);
+        }
+        fs.rmSync(packagedPatreonDl, { recursive: true, force: true });
+        fs.cpSync(localPatreonDl, packagedPatreonDl, { recursive: true });
         // Rebuild better-sqlite3 to prevent NODE_MODULE_VERSION mismatch
         execSync('npx electron-rebuild', { cwd: appDir, stdio: 'inherit' });
       }

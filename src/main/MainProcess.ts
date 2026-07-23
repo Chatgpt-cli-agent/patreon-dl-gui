@@ -66,7 +66,7 @@ class MainProcessBase extends ProcessBase<"main"> {
     });
     this.activeEditor = null;
     this.modifiedEditors = [];
-    this.downloadManager = new DownloadManager(this.win);
+    this.downloadManager = new DownloadManager();
     this.defaultUserAgent = args.defaultUserAgent;
     this.#cleanupCallbacks = [];
   }
@@ -158,6 +158,9 @@ class MainProcessBase extends ProcessBase<"main"> {
       modified: false,
       promptOnSave: !!filePath
     };
+    this.downloadManager.watchArchiveRoot(
+      config.output["out.dir"]
+    );
     if (alerts && alerts.length > 0) {
       editor.loadAlerts = alerts;
     }
@@ -230,6 +233,7 @@ class MainProcessBase extends ProcessBase<"main"> {
       if (webBrowserSettings.clearSessionDataOnExit) {
         await this.win.clearSessionData();
       }
+      await this.downloadManager.closeArchiveWatchers();
       await this.win.destroy();
       return;
     }

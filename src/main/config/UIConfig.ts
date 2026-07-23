@@ -10,9 +10,12 @@ import {
   getDefaultFileLoggerOptions,
   normalizeMaxVideoResolution
 } from "../util/Config";
-// Default output path used when no settings file exists.
-export const DEFAULT_OUTPUT_PATH = "/mnt/San-Myshuno/PatreonDownloads-Staging";
+// Permanent creator-organized Patreon download library. Downloaded archives are
+// extracted beside their originals and are never moved into the Sims folders.
+export const DEFAULT_OUTPUT_PATH =
+  "/mnt/San-Myshuno/Electronic Arts/PatreonDownloads";
 export const DEFAULT_PATH_TO_DENO = "";
+export const DEFAULT_CAMPAIGN_DIR_NAME_FORMAT = "{creator.name}";
 // Put the post number AFTER the post title (default library order is id-then-name)
 const defaultContentDirNameFormat = "{content.name}[ - ]?{content.id}";
 
@@ -77,10 +80,13 @@ function convertPatreonDLOptionsToUIConfig(
     },
     output: {
       "out.dir": DEFAULT_OUTPUT_PATH,
-      "campaign.dir.name.format": p.dirNameFormat.campaign,
+      "campaign.dir.name.format": DEFAULT_CAMPAIGN_DIR_NAME_FORMAT,
       "content.dir.name.format": defaultContentDirNameFormat,
       "media.filename.format": p.filenameFormat.media,
-      "content.file.exists.action": p.fileExistsAction.content,
+      // Refresh files when a post is edited/re-downloaded instead of keeping the
+      // stale copy (patreon-dl's default is "skip"). Combined with the status
+      // cache, unchanged posts are still skipped entirely.
+      "content.file.exists.action": "overwrite",
       "info.file.exists.action": p.fileExistsAction.info,
       "info.api.file.exists.action": p.fileExistsAction.infoAPI
     },
@@ -99,18 +105,12 @@ function convertPatreonDLOptionsToUIConfig(
           : p.include.contentMedia
       },
       "preview.media": {
-        type:
-          typeof p.include.previewMedia === "boolean" ?
-            p.include.previewMedia
-          : "custom",
-        custom:
-          typeof p.include.previewMedia === "boolean" ?
-            []
-          : p.include.previewMedia
+        type: false,
+        custom: []
       },
       "protected.media": p.include.protectedMedia,
       "all.media.variants": p.include.allMediaVariants,
-      "media.thumbnails": p.include.mediaThumbnails,
+      "media.thumbnails": false,
       "images.by.filename": p.include.mediaByFilename.images || "",
       "audio.by.filename": p.include.mediaByFilename.audio || "",
       "attachments.by.filename": p.include.mediaByFilename.attachments || "",

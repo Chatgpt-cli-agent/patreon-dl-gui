@@ -18,6 +18,6 @@ Characters enclosed in square brackets followed by a question mark denote condit
 
 ---
 
-Default: `{creator.vanity}[ - ]?{campaign.name}`
+Default: `{creator.name}`
 
 Fallback: `campaign-{campaign.id}`

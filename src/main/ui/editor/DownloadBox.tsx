@@ -36,9 +36,17 @@ function DownloadBox() {
 
   return useMemo(() => {
     return (
-      <Card className="bg-transparent border border-secondary">
-        <Card.Header>Download</Card.Header>
-        <Card.Body className="p-1">
+      <Card className="pd-download-setup-card">
+        <Card.Header className="pd-card-heading">
+          <span className="pd-card-heading-icon material-symbols-outlined">
+            cloud_download
+          </span>
+          <span>
+            <strong>Download setup</strong>
+            <small>Choose a Patreon target and where its files belong.</small>
+          </span>
+        </Card.Header>
+        <Card.Body className="pd-download-setup-body">
           <Container fluid>
             <BrowserObtainableInputRow
               config={["downloader", "target"]}
@@ -51,7 +59,7 @@ function DownloadBox() {
               type="dir"
               config={["output", "out.dir"]}
               label="Destination"
-              helpTooltip="Path to directory where content is saved."
+              helpTooltip="Permanent creator-organized Patreon download library. ZIP and RAR files extract beside their originals."
             />
             <BrowserObtainableInputRow
               config={["downloader", "cookie"]}

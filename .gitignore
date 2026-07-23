@@ -95,3 +95,7 @@ out/
 resources_out/
 
 test/
+
+# Local one-off TypeScript compilation artifacts
+/index.js
+/src/common/util/Misc.js

@@ -29,68 +29,106 @@ function EditorPanel() {
   }, [closeActiveEditor]);
 
   return (
-    <>
+    <div className="pd-control-panel">
       <AlertsBox />
       <DownloadBox />
-      <Tabs className="w-100 mt-3" defaultActiveKey="editor-include">
+      <Tabs
+        className="w-100 mt-3 pd-editor-sections"
+        defaultActiveKey="editor-include"
+      >
         <Tab
           eventKey="editor-include"
-          title="Include"
-          className="border border-secondary border-top-0"
-          tabClassName="px-3"
+          title={
+            <>
+              <span className="material-symbols-outlined">filter_alt</span>
+              <span>Include</span>
+            </>
+          }
+          className="pd-editor-pane"
+          tabClassName="pd-section-tab"
         >
           <IncludeBox />
         </Tab>
         <Tab
           eventKey="editor-profile"
-          title="Output"
-          className="border border-secondary border-top-0"
-          tabClassName="px-3"
+          title={
+            <>
+              <span className="material-symbols-outlined">folder_open</span>
+              <span>Output</span>
+            </>
+          }
+          className="pd-editor-pane"
+          tabClassName="pd-section-tab"
         >
           <OutputBox />
         </Tab>
         <Tab
           eventKey="editor-embeds"
-          title="Embeds"
-          className="border border-secondary border-top-0"
-          tabClassName="px-3"
+          title={
+            <>
+              <span className="material-symbols-outlined">smart_display</span>
+              <span>Embeds</span>
+            </>
+          }
+          className="pd-editor-pane"
+          tabClassName="pd-section-tab"
         >
           <EmbedsBox />
         </Tab>
         <Tab
           eventKey="editor-network"
-          title="Network"
-          className="border border-secondary border-top-0"
-          tabClassName="px-3"
+          title={
+            <>
+              <span className="material-symbols-outlined">language</span>
+              <span>Network</span>
+            </>
+          }
+          className="pd-editor-pane"
+          tabClassName="pd-section-tab"
         >
           <NetworkBox />
         </Tab>
         <Tab
           eventKey="editor-logging"
-          title="Logging"
-          className="border border-secondary border-top-0"
-          tabClassName="px-3"
+          title={
+            <>
+              <span className="material-symbols-outlined">terminal</span>
+              <span>Logging</span>
+            </>
+          }
+          className="pd-editor-pane"
+          tabClassName="pd-section-tab"
         >
           <LoggingBox />
         </Tab>
         <Tab
           eventKey="editor-other"
-          title="Other"
-          className="border border-secondary border-top-0 py-1"
-          tabClassName="px-3"
+          title={
+            <>
+              <span className="material-symbols-outlined">tune</span>
+              <span>Other</span>
+            </>
+          }
+          className="pd-editor-pane"
+          tabClassName="pd-section-tab"
         >
           <OtherBox />
         </Tab>
         <Tab
           eventKey="editor-download-center"
-          title="Downloads"
-          className="border border-secondary border-top-0 py-2"
-          tabClassName="px-3"
+          title={
+            <>
+              <span className="material-symbols-outlined">download</span>
+              <span>Downloads</span>
+            </>
+          }
+          className="pd-editor-pane pd-downloads-pane"
+          tabClassName="pd-section-tab"
         >
           <DownloadCenter />
         </Tab>
       </Tabs>
-    </>
+    </div>
   );
 }
 

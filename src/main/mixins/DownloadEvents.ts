@@ -7,12 +7,6 @@ import {
   listDownloadedCreators,
   repairCreatorDownloadState
 } from "../util/ExternalLinksExporter";
-import {
-  getSimsInstallSettings,
-  installSimsContent,
-  listSimsLibrary,
-  scanSimsContent
-} from "../util/SimsContentInstaller";
 
 export function DownloadEventSupportMixin<TBase extends MainProcessConstructor>(
   Base: TBase
@@ -96,22 +90,6 @@ export function DownloadEventSupportMixin<TBase extends MainProcessConstructor>(
             return clearExternalLinkFiles(outDir, targetFolder);
           }
         ),
-
-        this.handle("getSimsInstallSettings", () => {
-          return getSimsInstallSettings();
-        }),
-
-        this.handle("scanSimsContent", (sourceRoot: string) => {
-          return scanSimsContent(sourceRoot);
-        }),
-
-        this.handle("installSimsContent", (sourceRoot: string) => {
-          return installSimsContent(sourceRoot);
-        }),
-
-        this.handle("listSimsLibrary", () => {
-          return listSimsLibrary();
-        }),
 
         this.handle("openInFileManager", (folder: string) => {
           return shell.openPath(folder);

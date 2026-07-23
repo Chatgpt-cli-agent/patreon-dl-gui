@@ -5,12 +5,6 @@ import type { SaveFileConfigResult } from "./MainEvents";
 import type { WebBrowserSettings } from "../config/WebBrowserSettings";
 import type { FSChooserResult } from "../../common/util/FS";
 import type { DownloadCenterJobInfo } from "./DownloadCenter";
-import type {
-  SimsInstallResult,
-  SimsInstallSettings,
-  SimsLibraryItem,
-  SimsScanResult
-} from "../util/SimsContentInstaller";
 
 export type MainProcessInvocableMethod =
   | "getEditorPanelWidth"
@@ -42,10 +36,6 @@ export type MainProcessInvocableMethod =
   | "exportCreatorExternalLinks"
   | "repairCreatorDownloadState"
   | "clearExternalLinkFiles"
-  | "getSimsInstallSettings"
-  | "scanSimsContent"
-  | "installSimsContent"
-  | "listSimsLibrary"
   | "openInFileManager"
   | "removeDownload"
   | "configureYouTube"
@@ -133,11 +123,6 @@ export type MainProcessInvocableMethodHandler<
       deletedRows: Record<string, number>;
       errors: string[];
     }
-  : M extends "getSimsInstallSettings" ? () => SimsInstallSettings
-  : M extends "scanSimsContent" ? (sourceRoot: string) => Promise<SimsScanResult>
-  : M extends "installSimsContent" ?
-    (sourceRoot: string) => Promise<SimsInstallResult>
-  : M extends "listSimsLibrary" ? () => SimsLibraryItem[]
   : M extends "openInFileManager" ? (folder: string) => void
   : M extends "removeDownload" ? (jobId: string) => void
   : M extends "configureYouTube" ? () => void

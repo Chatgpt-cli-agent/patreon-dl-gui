@@ -9,8 +9,7 @@ import {
   renderExternalLinksHTML
 } from "./ExternalLinksWriter";
 
-const DEFAULT_CAMPAIGN_DIR_NAME_FORMAT =
-  "{creator.vanity}[ - ]?{campaign.name}";
+const DEFAULT_CAMPAIGN_DIR_NAME_FORMAT = "{creator.name}";
 
 interface DBInstanceLike {
   prepare(sql: string): {
@@ -22,7 +21,7 @@ interface DBInstanceLike {
 export interface RegenerateOptions {
   outDir: string;
   /** Format string used by the downloader for campaign dir names. The
-   *  default matches the patreon-dl default. Currently unused — dir
+   *  default matches the app default. Currently unused — dir
    *  matching is done by scanning for existing on-disk campaign dirs
    *  that contain a `posts/` subdir. Kept for future use. */
   campaignDirNameFormat?: string;
@@ -161,13 +160,10 @@ export async function regenerateExternalLinksFromDB(
 }
 
 function sanitizeDirName(campaign: Campaign): string {
-  // Best-effort mirror of patreon-dl's default campaign dir format
-  // ("{creator.vanity}[ - ]?{campaign.name}"), used only as a fallback
-  // when no matching on-disk dir is found.
-  const vanity = campaign.creator?.vanity || "";
+  // Best-effort mirror of the app's creator-folder format, used only as a
+  // fallback when no matching on-disk dir is found.
   const name = campaign.name || `campaign-${campaign.id}`;
-  const base = vanity ? `${vanity} - ${name}` : name;
-  return base.replace(/[\\/:*?"<>|]/g, "_").trim();
+  return name.replace(/[\\/:*?"<>|]/g, "_").trim();
 }
 
 /**

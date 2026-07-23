@@ -195,16 +195,9 @@ export class ExternalLinksCollector {
     }
   }
 
-  #computeCampaignLinksPath(campaign: Campaign): string {
-    // Mirror FSHelper.getCampaignDirs() layout: outDir / <campaign dir name> / _external-links.html
-    return path.resolve(this.#computeCampaignDir(campaign), EXTERNAL_LINKS_FILE_NAME);
-  }
-
   #computeCampaignDir(campaign: Campaign): string {
     const name = sanitizeForPath(campaign.name) || `campaign-${campaign.id}`;
-    const vanity = sanitizeForPath(campaign.creator?.vanity || "");
-    const campaignDirName = vanity ? `${vanity} - ${name}` : name;
-    return path.resolve(this.#opts.outDir, campaignDirName);
+    return path.resolve(this.#opts.outDir, name);
   }
 
   async #computePostLinksPath(campaign: Campaign, post: Post): Promise<string> {
@@ -293,8 +286,8 @@ function sanitizeForPath(name: string): string {
 function cleanContentNameForDir(name: string): string {
   return (
     name
-      .replace(/^\s*[\[(]?\s*download\s*[\])]?[\s:._-]*/i, "")
-      .replace(/\s*[\[(]\s*download\s*[\])]\s*/gi, " ")
+      .replace(/^\s*[[(]?\s*download\s*[\])]?[\s:._-]*/i, "")
+      .replace(/\s*[[(]\s*download\s*[\])]\s*/gi, " ")
       .replace(/\s{2,}/g, " ")
       .trim() || name
   );

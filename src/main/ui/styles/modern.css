@@ -1,21 +1,21 @@
 :root {
-  --pd-bg: #121417;
-  --pd-bg-alt: #171a1f;
-  --pd-surface: #1b1f25;
-  --pd-surface-solid: #20252c;
-  --pd-surface-highlight: rgba(229, 233, 240, 0.045);
-  --pd-border: rgba(190, 198, 210, 0.16);
-  --pd-border-strong: rgba(190, 198, 210, 0.28);
-  --pd-text: #e8ecf2;
-  --pd-text-muted: #a4adba;
-  --pd-accent: #8fb3d9;
-  --pd-accent-2: #8bbfa8;
+  --pd-bg: #0b0e14;
+  --pd-bg-alt: #10151e;
+  --pd-surface: #141a24;
+  --pd-surface-solid: #192130;
+  --pd-surface-highlight: rgba(255, 255, 255, 0.045);
+  --pd-border: rgba(148, 163, 184, 0.14);
+  --pd-border-strong: rgba(148, 163, 184, 0.26);
+  --pd-text: #f1f5f9;
+  --pd-text-muted: #8f9bad;
+  --pd-accent: #7c9cff;
+  --pd-accent-2: #50d2b0;
   --pd-warning: #c9a66b;
   --pd-danger: #c98282;
-  --pd-accent-soft: rgba(143, 179, 217, 0.12);
-  --pd-radius: 8px;
-  --pd-radius-sm: 6px;
-  --pd-shadow: 0 8px 20px rgba(0, 0, 0, 0.22);
+  --pd-accent-soft: rgba(124, 156, 255, 0.13);
+  --pd-radius: 14px;
+  --pd-radius-sm: 10px;
+  --pd-shadow: 0 16px 38px rgba(0, 0, 0, 0.28);
 
   --bs-primary: #4f6f91;
   --bs-primary-rgb: 79, 111, 145;
@@ -32,6 +32,348 @@
   --bs-body-bg: var(--pd-bg);
   --bs-body-color: var(--pd-text);
   --bs-border-color: var(--pd-border);
+}
+
+/* Modern control panel shell */
+.pd-control-panel {
+  padding: 0.9rem;
+  background:
+    radial-gradient(
+      circle at 12% -10%,
+      rgba(124, 156, 255, 0.11),
+      transparent 30%
+    ),
+    var(--pd-bg);
+}
+
+.pd-download-setup-card {
+  overflow: hidden;
+  background: linear-gradient(145deg, #171e2a, #121821) !important;
+  border: 1px solid rgba(124, 156, 255, 0.18) !important;
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.3) !important;
+}
+
+.pd-card-heading {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.85rem 1rem !important;
+  background: linear-gradient(
+    90deg,
+    rgba(124, 156, 255, 0.1),
+    transparent
+  ) !important;
+}
+
+.pd-card-heading > span:last-child {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+
+.pd-card-heading strong {
+  font-size: 0.92rem;
+  letter-spacing: -0.01em;
+}
+
+.pd-card-heading small {
+  margin-top: 0.1rem;
+  color: var(--pd-text-muted);
+  font-size: 0.72rem;
+  font-weight: 450;
+  letter-spacing: 0;
+}
+
+.pd-card-heading-icon {
+  display: grid;
+  width: 2.15rem;
+  height: 2.15rem;
+  flex: 0 0 auto;
+  place-items: center;
+  color: #c7d2fe;
+  background: linear-gradient(
+    145deg,
+    rgba(124, 156, 255, 0.3),
+    rgba(124, 156, 255, 0.1)
+  );
+  border: 1px solid rgba(124, 156, 255, 0.3);
+  border-radius: 11px;
+  font-size: 1.2rem;
+}
+
+.pd-download-setup-body {
+  padding: 0.75rem 0.8rem 0.85rem !important;
+}
+
+.pd-download-setup-body .row {
+  min-height: 2.8rem;
+  margin: 0;
+  padding: 0.28rem 0 !important;
+}
+
+.pd-download-setup-body .row > .col-4 {
+  display: flex;
+  align-items: center;
+  padding-left: 0.25rem;
+  color: #b5c0d0;
+  font-size: 0.75rem;
+  font-weight: 650;
+}
+
+.pd-download-setup-body .row > .col-8,
+.pd-download-setup-body .row > .col {
+  padding-right: 0;
+}
+
+.pd-download-setup-body .input-group,
+.pd-download-setup-body .form-control {
+  min-height: 2.35rem;
+}
+
+.pd-download-setup-body .input-group-text {
+  color: #aebcff;
+  background: rgba(124, 156, 255, 0.08);
+  border-color: var(--pd-border) !important;
+}
+
+.pd-download-setup-body .form-control[readonly] {
+  background: #101620 !important;
+}
+
+.pd-download-setup-body .form-check-input {
+  width: 2.25rem;
+  height: 1.2rem;
+  cursor: pointer;
+  background-color: #283244;
+  border-color: #3a475d;
+  border-radius: 999px;
+}
+
+.pd-download-setup-body .form-check-input:checked {
+  background-color: var(--pd-accent);
+  border-color: var(--pd-accent);
+}
+
+/* Primary section navigation */
+.pd-editor .pd-editor-sections {
+  display: flex;
+  gap: 0.25rem;
+  padding: 0.3rem;
+  overflow-x: auto;
+  flex-wrap: nowrap;
+  background: #0f141d;
+  border: 1px solid var(--pd-border);
+  border-radius: 12px;
+  scrollbar-width: none;
+}
+
+.pd-editor .pd-editor-sections::-webkit-scrollbar {
+  display: none;
+}
+
+.pd-editor .pd-editor-sections .pd-section-tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.38rem;
+  min-height: 2.3rem;
+  padding: 0.45rem 0.7rem;
+  white-space: nowrap;
+  color: #8e9aab;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  font-size: 0.76rem;
+}
+
+.pd-editor .pd-editor-sections .pd-section-tab .material-symbols-outlined {
+  font-size: 1.05rem;
+}
+
+.pd-editor .pd-editor-sections .pd-section-tab:hover {
+  color: #dbe4f0;
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.pd-editor .pd-editor-sections .pd-section-tab.active {
+  color: #eef2ff;
+  background: linear-gradient(
+    145deg,
+    rgba(124, 156, 255, 0.22),
+    rgba(124, 156, 255, 0.09)
+  );
+  border-color: rgba(124, 156, 255, 0.25);
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.05);
+}
+
+.pd-editor-pane {
+  margin-top: 0.55rem;
+  padding: 0.8rem !important;
+  background: rgba(15, 20, 29, 0.78);
+  border: 1px solid var(--pd-border);
+  border-radius: var(--pd-radius);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.18);
+}
+
+.pd-downloads-pane {
+  padding: 0.65rem !important;
+}
+
+/* Download Center subnavigation */
+.pd-download-center > .nav-pills {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.4rem;
+  padding: 0.3rem;
+  margin-bottom: 0.9rem !important;
+  background: #0b1018;
+  border: 1px solid var(--pd-border);
+  border-radius: 11px;
+}
+
+.pd-download-center > .nav-pills .nav-link {
+  padding: 0.55rem 0.75rem;
+  text-align: center;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  font-size: 0.78rem;
+}
+
+.pd-download-center > .nav-pills .nav-link.active {
+  color: #f5f7ff;
+  background: #1a2332;
+  border-color: rgba(124, 156, 255, 0.28);
+  box-shadow: 0 5px 14px rgba(0, 0, 0, 0.2);
+}
+
+.pd-panel-header {
+  padding: 0.15rem 0.1rem;
+}
+
+.pd-panel-header h2 {
+  font-size: 1.18rem;
+  letter-spacing: -0.025em;
+}
+
+.pd-eyebrow {
+  color: #7c9cff;
+  font-size: 0.65rem;
+  letter-spacing: 0.11em;
+}
+
+.pd-stat-grid {
+  gap: 0.6rem;
+}
+
+.pd-stat {
+  position: relative;
+  overflow: hidden;
+  padding: 0.78rem 0.85rem;
+  background: linear-gradient(145deg, #171e29, #121821);
+  border-color: rgba(148, 163, 184, 0.12);
+}
+
+.pd-stat::after {
+  position: absolute;
+  right: -1rem;
+  bottom: -1.3rem;
+  width: 3rem;
+  height: 3rem;
+  content: "";
+  background: rgba(124, 156, 255, 0.08);
+  border-radius: 50%;
+}
+
+.pd-stat strong {
+  font-size: 1.42rem;
+  letter-spacing: -0.04em;
+}
+
+.pd-empty-state {
+  min-height: 5rem;
+  justify-content: center;
+  flex-direction: column;
+  text-align: center;
+  background: rgba(10, 14, 21, 0.6);
+  border-color: rgba(148, 163, 184, 0.18);
+}
+
+.pd-empty-state .material-symbols-outlined {
+  font-size: 1.55rem;
+}
+
+.pd-editor .form-control,
+.pd-editor .form-select,
+.pd-download-center .form-control,
+.pd-download-center .form-select {
+  min-height: 2.35rem;
+  background: #0e141e !important;
+  border-color: rgba(148, 163, 184, 0.16) !important;
+}
+
+.pd-editor .form-control:hover,
+.pd-editor .form-select:hover {
+  border-color: rgba(124, 156, 255, 0.32) !important;
+}
+
+.pd-editor .btn,
+.pd-download-center .btn {
+  min-height: 2.15rem;
+  font-weight: 600;
+}
+
+.pd-editor .btn-primary,
+.pd-download-center .btn-primary {
+  background: linear-gradient(145deg, #7896f3, #627fdc);
+  border-color: #839eff;
+}
+
+.pd-editor .btn-success,
+.pd-download-center .btn-success {
+  background: linear-gradient(145deg, #3fb596, #318d77);
+  border-color: #5bc5a8;
+}
+
+.pd-editor-toolbar {
+  height: 3.35rem !important;
+  background: rgba(12, 16, 23, 0.96) !important;
+  backdrop-filter: blur(16px);
+}
+
+.pd-editor-toolbar .btn,
+.pd-editor-toolbar .dropdown-toggle {
+  min-width: 2.35rem;
+  min-height: 2.35rem;
+  background: #151c27 !important;
+  border-radius: 10px;
+}
+
+@media (max-width: 720px) {
+  .pd-control-panel {
+    padding: 0.65rem;
+  }
+
+  .pd-card-heading small {
+    display: none;
+  }
+
+  .pd-download-setup-body .row {
+    display: block;
+  }
+
+  .pd-download-setup-body .row > .col-4,
+  .pd-download-setup-body .row > .col-8,
+  .pd-download-setup-body .row > .col {
+    width: 100%;
+    padding: 0.15rem 0;
+  }
+
+  .pd-editor .pd-editor-sections .pd-section-tab {
+    padding-inline: 0.55rem;
+  }
+
+  .pd-stat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 /* Editor workspace background */

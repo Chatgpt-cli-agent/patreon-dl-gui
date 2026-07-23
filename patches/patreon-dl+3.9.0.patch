@@ -168,19 +168,6 @@ index 9ea610e..6d2e71d 100644
          }
          return realNextURL;
      }
-diff --git a/node_modules/patreon-dl/dist/utils/FSHelper.js b/node_modules/patreon-dl/dist/utils/FSHelper.js
-index 6e996c1..3e06796 100644
---- a/node_modules/patreon-dl/dist/utils/FSHelper.js
-+++ b/node_modules/patreon-dl/dist/utils/FSHelper.js
-@@ -73,6 +73,8 @@ export default class FSHelper {
-             postRootPath = path.resolve(this.config.outDir, dirName);
-             statusCachePath = path.resolve(postRootPath, INTERNAL_DATA_DIR_NAME);
-         }
-+        this.createDir(postRootPath);
-+        this.createDir(path.resolve(postRootPath, POST_FIXED_DIR_NAMES.ATTACHMENTS));
-         return {
-             root: postRootPath,
-             info: path.resolve(postRootPath, POST_FIXED_DIR_NAMES.INFO),
 diff --git a/node_modules/patreon-dl/dist/utils/FilenameFormatHelper.js b/node_modules/patreon-dl/dist/utils/FilenameFormatHelper.js
 index 86ba2ff..ff3f451 100644
 --- a/node_modules/patreon-dl/dist/utils/FilenameFormatHelper.js

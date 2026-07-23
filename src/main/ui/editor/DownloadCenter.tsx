@@ -16,12 +16,6 @@ import type {
   DownloadCenterLogEntry,
   DownloadJobStatus
 } from "../../types/DownloadCenter";
-import type {
-  SimsInstallResult,
-  SimsInstallSettings,
-  SimsLibraryItem,
-  SimsScanResult
-} from "../../util/SimsContentInstaller";
 
 interface DownloadedCreator {
   id: string;
@@ -45,13 +39,7 @@ interface DownloadedCreator {
   campaignFolder: string | null;
 }
 
-type SimsActionStatus = {
-  type: "info" | "success" | "error";
-  text: string;
-} | null;
-
 const MAX_INLINE_LOGS = 100;
-const LIBRARY_PAGE_SIZE = 240;
 
 function formatTime(timestamp: number | null) {
   if (!timestamp) {
@@ -138,15 +126,6 @@ function formatPostCount(creator: DownloadedCreator) {
   return `${creator.postCount} post${creator.postCount === 1 ? "" : "s"}`;
 }
 
-function formatSimsCandidateCount(scan: SimsScanResult | null) {
-  if (!scan) {
-    return "No scan yet";
-  }
-  const modFiles = scan.candidates.filter((candidate) => candidate.kind === "mods").length;
-  const trayFiles = scan.candidates.filter((candidate) => candidate.kind === "tray").length;
-  return `${modFiles} Mods file${modFiles === 1 ? "" : "s"}, ${trayFiles} Tray file${trayFiles === 1 ? "" : "s"}`;
-}
-
 function DownloadCenter() {
   const [jobs, setJobs] = useState<DownloadCenterJobInfo[]>([]);
   const [expandedJobIds, setExpandedJobIds] = useState<Set<string>>(new Set());
@@ -172,20 +151,6 @@ function DownloadCenter() {
   const [repairingCreatorId, setRepairingCreatorId] = useState<string | null>(
     null
   );
-  const [simsSettings, setSimsSettings] =
-    useState<SimsInstallSettings | null>(null);
-  const [simsScan, setSimsScan] = useState<SimsScanResult | null>(null);
-  const [simsInstallResult, setSimsInstallResult] =
-    useState<SimsInstallResult | null>(null);
-  const [simsStatus, setSimsStatus] = useState<SimsActionStatus>(null);
-  const [simsBusy, setSimsBusy] = useState(false);
-  const [libraryItems, setLibraryItems] = useState<SimsLibraryItem[]>([]);
-  const [libraryLoading, setLibraryLoading] = useState(false);
-  const [librarySearch, setLibrarySearch] = useState("");
-  const [libraryKind, setLibraryKind] = useState<"all" | "mods" | "tray" | "missing">("all");
-  const [libraryPage, setLibraryPage] = useState(1);
-  const [selectedLibraryCreator, setSelectedLibraryCreator] = useState<string | null>(null);
-
   const refreshCreators = useCallback(async () => {
     if (!outDir) {
       setCreators([]);
@@ -421,94 +386,8 @@ function DownloadCenter() {
     [config, outDir, refreshCreators, repairingCreatorId, setConfigValue]
   );
 
-  const refreshSimsSettings = useCallback(async () => {
-    const settings = await window.mainAPI.invoke("getSimsInstallSettings");
-    setSimsSettings(settings);
-  }, []);
-
-  const refreshLibrary = useCallback(async () => {
-    setLibraryLoading(true);
-    try {
-      const items = await window.mainAPI.invoke("listSimsLibrary");
-      setLibraryItems(items);
-    } finally {
-      setLibraryLoading(false);
-    }
-  }, []);
-
-  const scanSimsOutput = useCallback(
-    async (sourceRoot = outDir) => {
-      if (!sourceRoot || simsBusy) {
-        return null;
-      }
-      setSimsBusy(true);
-      setSimsStatus(null);
-      try {
-        const result = await window.mainAPI.invoke(
-          "scanSimsContent",
-          sourceRoot
-        );
-        setSimsScan(result);
-        setSimsInstallResult(null);
-        setSimsStatus({
-          type: result.errors.length > 0 ? "error" : "info",
-          text: `Found ${result.candidates.length} Sims file(s) across ${result.archives} archive(s), with ${result.errors.length} archive error(s).`
-        });
-        return result;
-      } catch (error: unknown) {
-        setSimsStatus({
-          type: "error",
-          text: `Scan failed: ${
-            error instanceof Error ? error.message : String(error)
-          }`
-        });
-        return null;
-      } finally {
-        setSimsBusy(false);
-      }
-    },
-    [outDir, simsBusy]
-  );
-
-  const installSimsOutput = useCallback(
-    async (sourceRoot = outDir) => {
-      if (!sourceRoot || simsBusy) {
-        return null;
-      }
-      setSimsBusy(true);
-      setSimsStatus(null);
-      try {
-        const result = await window.mainAPI.invoke(
-          "installSimsContent",
-          sourceRoot
-        );
-        setSimsScan(result);
-        setSimsInstallResult(result);
-        await refreshLibrary();
-        setSimsStatus({
-          type: result.errors.length > 0 ? "error" : "success",
-          text: `Installed ${result.installed.length}, skipped ${result.skipped.length}, ${result.errors.length} error(s).`
-        });
-        return result;
-      } catch (error: unknown) {
-        setSimsStatus({
-          type: "error",
-          text: `Install failed: ${
-            error instanceof Error ? error.message : String(error)
-          }`
-        });
-        return null;
-      } finally {
-        setSimsBusy(false);
-      }
-    },
-    [outDir, refreshLibrary, simsBusy]
-  );
-
   useEffect(() => {
     refreshJobs();
-    void refreshSimsSettings();
-    void refreshLibrary();
     const removeListeners = [
       window.mainAPI.on("downloadCenter:jobsUpdate", (updatedJobs) => {
         setJobs(updatedJobs);
@@ -532,7 +411,7 @@ function DownloadCenter() {
     return () => {
       removeListeners.forEach((cb) => cb());
     };
-  }, [refreshJobs, refreshLibrary, refreshSimsSettings]);
+  }, [refreshJobs]);
 
   // Whenever the user switches to the External Links tab, refresh the
   // creator list from the DB.
@@ -541,13 +420,7 @@ function DownloadCenter() {
     if (activeTab === "external-links") {
       void refreshCreators();
     }
-    if (activeTab === "sims-mods") {
-      void refreshSimsSettings();
-    }
-    if (activeTab === "library") {
-      void refreshLibrary();
-    }
-  }, [activeTab, refreshCreators, refreshLibrary, refreshSimsSettings]);
+  }, [activeTab, refreshCreators]);
 
   const toggleExpanded = useCallback((jobId: string) => {
     setExpandedJobIds((prev) => {
@@ -618,10 +491,6 @@ function DownloadCenter() {
   const totalCount = jobs.length;
   const completePercent =
     totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
-  const externalLinkCreators = useMemo(
-    () => creators.filter((creator) => creator.hasExternalLinks).length,
-    [creators]
-  );
   const totalExternalLinks = useMemo(
     () => creators.reduce((sum, creator) => sum + creator.totalLinks, 0),
     [creators]
@@ -630,95 +499,6 @@ function DownloadCenter() {
     () => creators.filter((creator) => creator.status === "needsRepair").length,
     [creators]
   );
-  const filteredLibraryItems = useMemo(() => {
-    const search = librarySearch.trim().toLowerCase();
-    return libraryItems.filter((item) => {
-      if (selectedLibraryCreator && item.creatorName !== selectedLibraryCreator) {
-        return false;
-      }
-      if (libraryKind === "mods" && item.kind !== "mods") {
-        return false;
-      }
-      if (libraryKind === "tray" && item.kind !== "tray") {
-        return false;
-      }
-      if (libraryKind === "missing" && !item.missing) {
-        return false;
-      }
-      if (!search) {
-        return true;
-      }
-      return [
-        item.displayName,
-        item.creatorName,
-        item.postTitle,
-        item.fileName,
-        item.destinationPath
-      ].some((value) => value.toLowerCase().includes(search));
-    });
-  }, [libraryItems, libraryKind, librarySearch, selectedLibraryCreator]);
-  const libraryCreators = useMemo(() => {
-    const creatorMap = new Map<string, {
-      name: string;
-      count: number;
-      installed: number;
-      missing: number;
-      thumbnailUrl: string | null;
-    }>();
-    for (const item of libraryItems) {
-      const existing = creatorMap.get(item.creatorName) || {
-        name: item.creatorName,
-        count: 0,
-        installed: 0,
-        missing: 0,
-        thumbnailUrl: null
-      };
-      existing.count++;
-      if (item.installed) {
-        existing.installed++;
-      }
-      if (item.missing) {
-        existing.missing++;
-      }
-      if (!existing.thumbnailUrl && item.thumbnailUrl) {
-        existing.thumbnailUrl = item.thumbnailUrl;
-      }
-      creatorMap.set(item.creatorName, existing);
-    }
-    return [...creatorMap.values()].sort((a, b) => {
-      return b.count - a.count || a.name.localeCompare(b.name);
-    });
-  }, [libraryItems]);
-  const libraryPageCount = Math.max(
-    1,
-    Math.ceil(filteredLibraryItems.length / LIBRARY_PAGE_SIZE)
-  );
-  const clampedLibraryPage = Math.min(libraryPage, libraryPageCount);
-  const pagedLibraryItems = useMemo(() => {
-    const start = (clampedLibraryPage - 1) * LIBRARY_PAGE_SIZE;
-    return filteredLibraryItems.slice(start, start + LIBRARY_PAGE_SIZE);
-  }, [clampedLibraryPage, filteredLibraryItems]);
-  useEffect(() => {
-    setLibraryPage(1);
-  }, [libraryKind, librarySearch, selectedLibraryCreator]);
-  useEffect(() => {
-    if (libraryPage > libraryPageCount) {
-      setLibraryPage(libraryPageCount);
-    }
-  }, [libraryPage, libraryPageCount]);
-  const installedLibraryCount = useMemo(
-    () => libraryItems.filter((item) => item.installed).length,
-    [libraryItems]
-  );
-  const missingLibraryCount = useMemo(
-    () => libraryItems.filter((item) => item.missing).length,
-    [libraryItems]
-  );
-  const libraryCreatorsCount = useMemo(
-    () => new Set(libraryItems.map((item) => item.creatorName)).size,
-    [libraryItems]
-  );
-
   const renderJobActions = (job: DownloadCenterJobInfo) => {
     const canStart =
       ["pending", "queued", "confirmRequired", "paused"].includes(job.status);
@@ -732,7 +512,6 @@ function DownloadCenter() {
       job.status === "confirmRequired" ||
       job.status === "paused";
     const canDelete = job.status !== "running";
-    const canInstall = job.status === "completed" && !!job.outDir;
 
     return (
       <div className="d-flex gap-1">
@@ -771,15 +550,6 @@ function DownloadCenter() {
           title="Delete from list"
         >
           <span className="material-symbols-outlined">delete</span>
-        </Button>
-        <Button
-          size="sm"
-          variant="outline-success"
-          disabled={!canInstall || simsBusy}
-          onClick={() => void installSimsOutput(job.outDir)}
-          title="Install Sims files from this output folder"
-        >
-          <span className="material-symbols-outlined">inventory_2</span>
         </Button>
       </div>
     );
@@ -1146,352 +916,6 @@ function DownloadCenter() {
     </>
   );
 
-  const renderSimsModsTab = () => (
-    <>
-      <div className="pd-panel-header mb-3">
-        <div>
-          <div className="pd-eyebrow">Post Processing</div>
-          <h2>Sims Mods</h2>
-        </div>
-        <div className="pd-action-row">
-          <Button
-            size="sm"
-            variant="outline-secondary"
-            onClick={() => void scanSimsOutput()}
-            disabled={!outDir || simsBusy}
-          >
-            {simsBusy ?
-              <Spinner animation="border" size="sm" />
-            : <span className="material-symbols-outlined">search</span>}
-          </Button>
-          <Button
-            size="sm"
-            variant="success"
-            onClick={() => void installSimsOutput()}
-            disabled={!outDir || simsBusy}
-          >
-            Install found files
-          </Button>
-        </div>
-      </div>
-      {!outDir ?
-        <div className="pd-empty-state mb-2">
-          Set a destination folder in the Download box before scanning.
-        </div>
-      : null}
-      <div className="pd-stat-grid mb-3">
-        <div className="pd-stat">
-          <span className="pd-stat-label">Found</span>
-          <strong>{simsScan ? simsScan.candidates.length : 0}</strong>
-        </div>
-        <div className="pd-stat">
-          <span className="pd-stat-label">Archives</span>
-          <strong>{simsScan ? simsScan.archives : 0}</strong>
-        </div>
-        <div className="pd-stat">
-          <span className="pd-stat-label">Installed</span>
-          <strong>{simsInstallResult ? simsInstallResult.installed.length : 0}</strong>
-        </div>
-        <div className={`pd-stat ${(simsInstallResult?.errors.length || simsScan?.errors.length) ? "pd-stat-alert" : ""}`}>
-          <span className="pd-stat-label">Errors</span>
-          <strong>{simsInstallResult ? simsInstallResult.errors.length : simsScan ? simsScan.errors.length : 0}</strong>
-        </div>
-      </div>
-      <div className="pd-sims-paths mb-3">
-        <div>
-          <span>Source</span>
-          <code>{outDir || "--"}</code>
-        </div>
-        <div>
-          <span>Mods</span>
-          <code>{simsSettings?.libraryDir || "--"}</code>
-        </div>
-        <div>
-          <span>Tray</span>
-          <code>{simsSettings?.trayDir || "--"}</code>
-        </div>
-      </div>
-      {simsStatus ?
-        <div className={`small mb-2 text-${simsStatus.type === "error" ? "danger" : simsStatus.type === "success" ? "success" : "info"}`}>
-          {simsStatus.text}
-        </div>
-      : null}
-      <div className="small text-muted mb-2">
-        {formatSimsCandidateCount(simsScan)}
-      </div>
-      {simsScan && simsScan.candidates.length > 0 ?
-        <Table hover size="sm" variant="dark" className="mb-0 pd-job-table">
-          <thead>
-            <tr>
-              <th>File</th>
-              <th>Type</th>
-              <th>Source</th>
-            </tr>
-          </thead>
-          <tbody>
-            {simsScan.candidates.slice(0, 80).map((candidate) => (
-              <tr key={candidate.sourceKey}>
-                <td>{candidate.fileName}</td>
-                <td>
-                  <Badge bg={candidate.kind === "tray" ? "warning" : "info"}>
-                    {candidate.kind === "tray" ? "Tray" : "Mods"}
-                  </Badge>
-                </td>
-                <td className="small text-muted">
-                  {candidate.fromArchive ?
-                    `Archive: ${candidate.relativePath}`
-                  : candidate.relativePath}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </Table>
-      : null}
-      {simsScan && simsScan.candidates.length > 80 ?
-        <div className="small text-muted mt-2">
-          Showing 80 of {simsScan.candidates.length} files.
-        </div>
-      : null}
-      {simsInstallResult && simsInstallResult.errors.length > 0 ?
-        <div className="mt-2 small text-danger">
-          {simsInstallResult.errors.slice(0, 5).join("; ")}
-        </div>
-      : null}
-      {!simsInstallResult && simsScan && simsScan.errors.length > 0 ?
-        <div className="mt-2 small text-danger">
-          {simsScan.errors.slice(0, 5).join("; ")}
-        </div>
-      : null}
-    </>
-  );
-
-  const renderLibraryTab = () => (
-    <>
-      <div className="pd-panel-header mb-3">
-        <div>
-          <div className="pd-eyebrow">Installed Content</div>
-          <h2>Library</h2>
-        </div>
-        <Button
-          size="sm"
-          variant="outline-secondary"
-          onClick={() => void refreshLibrary()}
-          disabled={libraryLoading}
-        >
-          {libraryLoading ?
-            <Spinner animation="border" size="sm" />
-          : <span className="material-symbols-outlined">refresh</span>}
-        </Button>
-      </div>
-      <div className="pd-stat-grid mb-3">
-        <div className="pd-stat">
-          <span className="pd-stat-label">Installed</span>
-          <strong>{installedLibraryCount}</strong>
-        </div>
-        <div className="pd-stat">
-          <span className="pd-stat-label">Creators</span>
-          <strong>{libraryCreatorsCount}</strong>
-        </div>
-        <div className="pd-stat">
-          <span className="pd-stat-label">Shown</span>
-          <strong>{filteredLibraryItems.length}</strong>
-        </div>
-        <div className={`pd-stat ${missingLibraryCount > 0 ? "pd-stat-alert" : ""}`}>
-          <span className="pd-stat-label">Missing</span>
-          <strong>{missingLibraryCount}</strong>
-        </div>
-      </div>
-      <div className="pd-library-toolbar mb-3">
-        <Form.Control
-          type="text"
-          value={librarySearch}
-          onChange={(event) => setLibrarySearch(event.target.value)}
-          placeholder="Search creator, post, or file"
-        />
-        <Form.Select
-          value={libraryKind}
-          onChange={(event) =>
-            setLibraryKind(event.target.value as typeof libraryKind)
-          }
-        >
-          <option value="all">All</option>
-          <option value="mods">Mods</option>
-          <option value="tray">Tray</option>
-          <option value="missing">Missing</option>
-        </Form.Select>
-      </div>
-      <div className="pd-library-creators mb-3">
-        <button
-          type="button"
-          className={`pd-library-creator-chip ${selectedLibraryCreator === null ? "is-selected" : ""}`}
-          onClick={() => setSelectedLibraryCreator(null)}
-        >
-          <span className="pd-library-creator-avatar">
-            <span className="material-symbols-outlined">groups</span>
-          </span>
-          <span className="pd-library-creator-chip-main">
-            <span>All creators</span>
-            <small>{libraryItems.length} item{libraryItems.length === 1 ? "" : "s"}</small>
-          </span>
-        </button>
-        {libraryCreators.map((creator) => (
-          <button
-            type="button"
-            key={creator.name}
-            className={`pd-library-creator-chip ${selectedLibraryCreator === creator.name ? "is-selected" : ""}`}
-            onClick={() => setSelectedLibraryCreator(creator.name)}
-          >
-            <span className="pd-library-creator-avatar">
-              {creator.thumbnailUrl ?
-                <img src={creator.thumbnailUrl} alt="" />
-              : <span className="material-symbols-outlined">person</span>}
-            </span>
-            <span className="pd-library-creator-chip-main">
-              <span title={creator.name}>{creator.name}</span>
-              <small>
-                {creator.count} item{creator.count === 1 ? "" : "s"}
-                {creator.missing > 0 ? `, ${creator.missing} missing` : ""}
-              </small>
-            </span>
-          </button>
-        ))}
-      </div>
-      {selectedLibraryCreator ?
-        <div className="pd-library-selection mb-3">
-          <span>
-            Showing downloads for <strong>{selectedLibraryCreator}</strong>
-          </span>
-          <Button
-            size="sm"
-            variant="outline-secondary"
-            onClick={() => setSelectedLibraryCreator(null)}
-          >
-            Clear
-          </Button>
-        </div>
-      : null}
-      {filteredLibraryItems.length === 0 ?
-        <div className="pd-empty-state">
-          <span className="material-symbols-outlined">inventory_2</span>
-          <div>No installed Patreon content matches this view.</div>
-        </div>
-      : <>
-        <div className="pd-library-grid">
-          {pagedLibraryItems.map((item) => (
-            <div key={item.id} className={`pd-library-card ${item.missing ? "is-missing" : ""}`}>
-              <div className="pd-library-thumb">
-                {item.thumbnailUrl ?
-                  <img src={item.thumbnailUrl} alt="" />
-                : <span className="material-symbols-outlined">image</span>}
-              </div>
-              <div className="pd-library-body">
-                <div className="pd-library-title" title={item.displayName}>
-                  {item.displayName}
-                </div>
-                <div className="pd-library-creator" title={item.creatorName}>
-                  {item.creatorName}
-                </div>
-                <div className="pd-library-post" title={item.postTitle}>
-                  {item.postTitle}
-                </div>
-                <div className="pd-library-meta">
-                  <Badge bg={item.kind === "tray" ? "warning" : "info"}>
-                    {item.kind === "tray" ? "Tray" : "Mods"}
-                  </Badge>
-                  {item.fromArchive ?
-                    <Badge bg="secondary">Archive</Badge>
-                  : null}
-                  <Badge bg={item.missing ? "danger" : "success"}>
-                    {item.missing ? "Missing" : "Installed"}
-                  </Badge>
-                </div>
-              </div>
-              <div className="pd-library-actions">
-                <Button
-                  size="sm"
-                  variant="outline-secondary"
-                  title="Open installed folder"
-                  onClick={() =>
-                    window.mainAPI.invoke(
-                      "openInFileManager",
-                      item.destinationPath.split("/").slice(0, -1).join("/") || item.destinationPath
-                    )
-                  }
-                >
-                  <span className="material-symbols-outlined">folder_open</span>
-                </Button>
-                {item.postUrl ?
-                  <Button
-                    size="sm"
-                    variant="outline-secondary"
-                    title="Open Patreon post"
-                    onClick={() =>
-                      window.mainAPI.invoke("openExternalBrowser", item.postUrl || "")
-                    }
-                  >
-                    <span className="material-symbols-outlined">open_in_new</span>
-                  </Button>
-                : null}
-              </div>
-            </div>
-          ))}
-        </div>
-        <div className="pd-library-pagination mt-3">
-          <div className="small text-muted">
-            Showing {(clampedLibraryPage - 1) * LIBRARY_PAGE_SIZE + 1}
-            {" - "}
-            {Math.min(clampedLibraryPage * LIBRARY_PAGE_SIZE, filteredLibraryItems.length)}
-            {" of "}
-            {filteredLibraryItems.length}
-          </div>
-          <div className="pd-action-row">
-            <Button
-              size="sm"
-              variant="outline-secondary"
-              disabled={clampedLibraryPage <= 1}
-              onClick={() => setLibraryPage(1)}
-              title="First page"
-            >
-              <span className="material-symbols-outlined">first_page</span>
-            </Button>
-            <Button
-              size="sm"
-              variant="outline-secondary"
-              disabled={clampedLibraryPage <= 1}
-              onClick={() => setLibraryPage((page) => Math.max(1, page - 1))}
-              title="Previous page"
-            >
-              <span className="material-symbols-outlined">chevron_left</span>
-            </Button>
-            <span className="pd-page-label">
-              Page {clampedLibraryPage} of {libraryPageCount}
-            </span>
-            <Button
-              size="sm"
-              variant="outline-secondary"
-              disabled={clampedLibraryPage >= libraryPageCount}
-              onClick={() =>
-                setLibraryPage((page) => Math.min(libraryPageCount, page + 1))
-              }
-              title="Next page"
-            >
-              <span className="material-symbols-outlined">chevron_right</span>
-            </Button>
-            <Button
-              size="sm"
-              variant="outline-secondary"
-              disabled={clampedLibraryPage >= libraryPageCount}
-              onClick={() => setLibraryPage(libraryPageCount)}
-              title="Last page"
-            >
-              <span className="material-symbols-outlined">last_page</span>
-            </Button>
-          </div>
-        </div>
-      </>}
-    </>
-  );
-
   return (
     <div className="pd-download-center">
       <Tabs
@@ -1505,12 +929,6 @@ function DownloadCenter() {
         </Tab>
         <Tab eventKey="external-links" title="External Links">
           {renderExternalLinksTab()}
-        </Tab>
-        <Tab eventKey="sims-mods" title="Sims Mods">
-          {renderSimsModsTab()}
-        </Tab>
-        <Tab eventKey="library" title="Library">
-          {renderLibraryTab()}
         </Tab>
       </Tabs>
     </div>
